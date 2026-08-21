@@ -319,17 +319,6 @@ class GUI:
         # Scan button
         # -----------------------------------------------------
 
-        self.scan_button = QPushButton(
-            "Scan for Devices"
-        )
-
-        self.scan_button.clicked.connect(
-            self.scan_devices
-        )
-
-        sidebar_layout.addWidget(
-            self.scan_button
-        )
 
         # -----------------------------------------------------
         # Nearby title
@@ -376,6 +365,18 @@ class GUI:
 
         sidebar_layout.addWidget(
             self.nearby_list
+        )
+
+        self.scan_button = QPushButton(
+            "Scan for Devices"
+        )
+
+        self.scan_button.clicked.connect(
+            self.scan_devices
+        )
+
+        sidebar_layout.addWidget(
+            self.scan_button
         )
 
         sidebar.setLayout(
