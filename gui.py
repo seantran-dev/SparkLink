@@ -643,10 +643,7 @@ class GUI:
     # LOAD CONVERSATION
     # =========================================================
 
-    def load_conversation(
-        self,
-        username
-    ):
+    def load_conversation(self, username):
 
         self.chat.clear()
 
@@ -657,19 +654,10 @@ class GUI:
 
         for sender, text in messages:
 
-            if sender == "me":
-
-                self.display_my_message(
-                    text,
-                    save=False
-                )
-
-            else:
-
-                self.display_friend_message(
-                    text,
-                    save=False
-                )
+            self.add_message_bubble(
+                text,
+                sender == "me"
+            )
 
         self.chat.scrollToBottom()
 
@@ -947,13 +935,9 @@ class GUI:
     # DISPLAY MY MESSAGE
     # =========================================================
 
-    def display_my_message(
-        self,
-        message,
-        save=True
-    ):
+    def display_my_message(self, message):
 
-        if save and self.current_contact:
+        if self.current_contact:
 
             self.conversations.setdefault(
                 self.current_contact,
@@ -962,79 +946,47 @@ class GUI:
                 ("me", message)
             )
 
-        bubble = MessageBubble(
+        self.add_message_bubble(
             message,
             True
         )
-
-        item = QListWidgetItem()
-
-        self.chat.addItem(
-            item
-        )
-
-        self.chat.setItemWidget(
-            item,
-            bubble
-        )
-
-        bubble.setFixedWidth(
-            self.chat.viewport().width()
-        )
-
-        item.setSizeHint(
-            bubble.sizeHint()
-        )
-
-        self.chat.scrollToBottom()
 
     # =========================================================
     # DISPLAY FRIEND MESSAGE
     # =========================================================
 
-    def display_friend_message(
-        self,
-        connection,
-        message,
-        save=True
-    ):
+    def display_friend_message(self, connection, message):
 
-        username = (
-            connection.remote_username
-        )
+        username = connection.remote_username
 
         if not username:
             return
 
-        # Store message regardless of
-        # which contact is currently selected.
-        if save:
+        self.conversations.setdefault(
+            username,
+            []
+        ).append(
+            ("them", message)
+        )
 
-            self.conversations.setdefault(
-                username,
-                []
-            ).append(
-                ("them", message)
-            )
-
-        # Only display it if we're viewing
-        # that conversation.
         if username != self.current_contact:
-
             return
 
-        self.hide_typing()
+        self.add_message_bubble(
+            message,
+            False
+        )
+    
+    def add_message_bubble(self, message, mine):
 
         bubble = MessageBubble(
             message,
-            False
+            mine
         )
 
         item = QListWidgetItem()
 
-        self.chat.addItem(
-            item
-        )
+        self.chat.addItem(item)
 
         self.chat.setItemWidget(
             item,
