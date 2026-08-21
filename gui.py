@@ -192,7 +192,6 @@ class GUI:
 
         QListWidget::item {
             border: none;
-            padding: 8px;
         }
 
         QListWidget::item:hover {
@@ -965,8 +964,7 @@ class GUI:
 
         bubble = MessageBubble(
             message,
-            True,
-            self.family
+            True
         )
 
         item = QListWidgetItem()
@@ -1029,8 +1027,7 @@ class GUI:
 
         bubble = MessageBubble(
             message,
-            False,
-            self.family
+            False
         )
 
         item = QListWidgetItem()
