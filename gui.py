@@ -34,7 +34,7 @@ class Signals(QObject):
     connection_received = Signal(object, str)
     connection_lost = Signal(object)
 
-    device_found = Signal(str, str, int)
+    device_found = Signal(str, str, str, int)
     device_lost = Signal(str, str)
 
 
