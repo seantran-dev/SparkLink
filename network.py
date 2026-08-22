@@ -2,16 +2,23 @@ import socket
 import threading
 
 
+class Connection:
+
+    def __init__(self, sock, user_id=None, username=None):
+        self.sock = sock
+        self.user_id = user_id
+        self.username = username
+        self.address = sock.getpeername()
+
+
 class Network:
 
     def __init__(self, user_id, username):
-        self.sock = None
         self.server = None
         self.gui = None
         self.user_id = user_id
         self.username = username
-        self.friend_name = "Unknown"
-        self.friend_user_id = None
+        self.connections = {}
         self.on_connection = None
         self.on_message = None
         self.on_typing = None
@@ -46,12 +53,12 @@ class Network:
         ).start()
 
     def accept_connections(self):
-
         while True:
-
             client, addr = self.server.accept()
 
-            self.sock = client
+            connection = Connection(
+                client
+            )
 
             print(
                 f"Incoming connection from {addr}"
@@ -63,15 +70,11 @@ class Network:
 
             threading.Thread(
                 target=self.receive,
-                args=(client,),
+                args=(connection,),
                 daemon=True
             ).start()
 
     def connect(self, host, port):
-        if self.sock is not None:
-            print("Already connected.")
-            return
-
         threading.Thread(
             target=self._connect,
             args=(host, port),
@@ -92,9 +95,12 @@ class Network:
             )
 
             sock.settimeout(None)
-            self.sock = sock
 
-            self.sock.sendall(
+            connection = Connection(
+                sock
+            )
+
+            sock.sendall(
                 f"IDENTITY:{self.user_id}|{self.username}\n".encode()
             )
 
@@ -104,7 +110,7 @@ class Network:
 
             threading.Thread(
                 target=self.receive,
-                args=(self.sock,),
+                args=(connection,),
                 daemon=True
             ).start()
 
@@ -126,12 +132,14 @@ class Network:
             )
             sock.close()
 
-    def receive(self, sock):
+    def receive(self, connection):
         buffer = ""
 
         while True:
             try:
-                data = sock.recv(4096)
+                data = connection.sock.recv(
+                    4096
+                )
 
                 if not data:
                     break
@@ -150,7 +158,7 @@ class Network:
                         continue
 
                     self.handle_message(
-                        sock,
+                        connection,
                         message
                     )
 
@@ -165,26 +173,36 @@ class Network:
                 )
                 break
 
-    def handle_message(self, sock, message):
+        if connection.user_id in self.connections:
+            del self.connections[
+                connection.user_id
+            ]
+
+        if self.on_disconnect:
+            self.on_disconnect(
+                connection
+            )
+
+    def handle_message(self, connection, message):
         if message.startswith("CHAT:"):
             text = message[5:]
 
             if self.on_message:
                 self.on_message(
-                    sock,
+                    connection,
                     text
                 )
 
         elif message == "TYPING":
             if self.on_typing:
                 self.on_typing(
-                    sock
+                    connection
                 )
 
         elif message == "STOP_TYPING":
             if self.on_stop_typing:
                 self.on_stop_typing(
-                    sock
+                    connection
                 )
 
         elif message.startswith("IDENTITY:"):
@@ -198,44 +216,63 @@ class Network:
             if len(parts) != 2:
                 return
 
-            self.friend_user_id = parts[0]
-            self.friend_name = parts[1]
+            connection.user_id = parts[0]
+            connection.username = parts[1]
+
+            self.connections[
+                connection.user_id
+            ] = connection
 
             print(
-                f"Connected to {self.friend_name}"
+                f"Connected to {connection.username}"
             )
 
             if self.on_connection:
                 self.on_connection(
-                    sock,
-                    self.friend_name
+                    connection,
+                    connection.username
                 )
 
-    def send(self, message):
+    def send(self, user_id, message):
+        connection = self.connections.get(
+            user_id
+        )
 
-        if self.sock is None:
+        if not connection:
             return False
 
         try:
-
-            self.sock.sendall(
+            connection.sock.sendall(
                 f"CHAT:{message}\n".encode()
             )
 
             return True
 
         except OSError:
-
             return False
 
-    def send_typing(self):
-        if self.sock:
-            self.sock.sendall(
-                "TYPING\n".encode()
-            )
+    def send_typing(self, user_id):
+        connection = self.connections.get(
+            user_id
+        )
 
-    def send_stop_typing(self):
-        if self.sock:
-            self.sock.sendall(
-                "STOP_TYPING\n".encode()
-            )
+        if connection:
+            try:
+                connection.sock.sendall(
+                    "TYPING\n".encode()
+                )
+            except OSError:
+                pass
+
+    def send_stop_typing(self, user_id):
+        connection = self.connections.get(
+            user_id
+        )
+
+        if connection:
+            try:
+                connection.sock.sendall(
+                    "STOP_TYPING\n".encode()
+                )
+            except OSError:
+                pass

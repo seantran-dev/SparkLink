@@ -912,6 +912,7 @@ class GUI:
             return
 
         success = self.network.send(
+            self.current_contact,
             message
         )
 
@@ -1036,7 +1037,9 @@ class GUI:
 
         if not self.is_typing:
 
-            self.network.send_typing()
+            self.network.send_typing(
+                self.current_contact
+            )
 
             self.is_typing = True
 
@@ -1066,7 +1069,9 @@ class GUI:
 
         if self.current_contact:
 
-            self.network.send_stop_typing()
+            self.network.send_stop_typing(
+                self.current_contact
+            )
 
         self.is_typing = False
 
