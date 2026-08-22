@@ -829,15 +829,6 @@ class GUI:
             port
         )
 
-        self.current_contact = user_id
-
-        self.chat_title.setText(
-            username
-        )
-
-        self.load_conversation(
-            user_id
-        )
 
         self.message_box.setEnabled(
             True
