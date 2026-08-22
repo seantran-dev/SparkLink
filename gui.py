@@ -801,13 +801,21 @@ class GUI:
     # CONNECTION ESTABLISHED
     # =========================================================
 
-    def handle_connection(
-        self,
-        connection,
-        username
-    ):
+    def handle_connection(self, connection, username):
 
         ip, port = connection.getpeername()
+
+        self.message_box.setEnabled(
+            True
+        )
+
+        self.send_button.setEnabled(
+            True
+        )
+
+        self.chat_title.setText(
+            username
+        )
 
         self.add_contact(
             username,
