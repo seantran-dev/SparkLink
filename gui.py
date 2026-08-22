@@ -620,6 +620,11 @@ class GUI:
     # =========================================================
 
     def select_contact(self, item):
+
+        user_id = item.data(
+            Qt.ItemDataRole.UserRole
+        )
+        
         print(
             "SELECT CONTACT:",
             user_id
@@ -630,9 +635,7 @@ class GUI:
             list(self.network.connections.keys())
         )
 
-        user_id = item.data(
-            Qt.ItemDataRole.UserRole
-        )
+        
 
         if not user_id:
             return
