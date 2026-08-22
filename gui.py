@@ -863,9 +863,7 @@ class GUI:
         connection
     ):
 
-        username = (
-            connection.remote_username
-        )
+        username = self.network.friend_name
 
         if username != self.current_contact:
             return
@@ -953,7 +951,7 @@ class GUI:
 
     def display_friend_message(self, connection, message):
 
-        username = connection.remote_username
+        username = self.network.friend_name
 
         if not username:
             return
@@ -1060,9 +1058,7 @@ class GUI:
         connection
     ):
 
-        username = (
-            connection.remote_username
-        )
+        username = self.network.friend_name
 
         if username != self.current_contact:
             return
