@@ -820,7 +820,7 @@ class GUI:
 
         ip, port = connection.address
 
-       user_id = connection.user_id
+        user_id = connection.user_id
 
         self.add_contact(
             user_id,
