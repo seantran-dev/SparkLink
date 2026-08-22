@@ -34,7 +34,7 @@ def start_main_gui(username, user_id):
         user_id,
         username
     )
-    
+
     discovery = Discovery(
         user_id,
         username,
@@ -44,6 +44,7 @@ def start_main_gui(username, user_id):
     gui.network = network
     gui.discovery = discovery
     gui.database = database
+    gui.user_id = user_id
 
     network.on_connection = (
         lambda connection, remote_username:
