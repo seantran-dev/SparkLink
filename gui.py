@@ -645,15 +645,22 @@ class GUI:
             user_id
         )
 
+        self.hide_typing()
+
         self.message_box.setEnabled(
-            True
+            False
         )
 
         self.send_button.setEnabled(
-            True
+            False
         )
 
-        self.hide_typing()
+        if self.network:
+
+            self.network.connect(
+                contact["ip"],
+                int(contact["port"])
+            )
 
     # =========================================================
     # LOAD CONVERSATION
