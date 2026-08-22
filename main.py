@@ -6,13 +6,19 @@ from startup_gui import StartupGUI
 from gui import GUI
 from network import Network
 from discovery import Discovery
+from database import Database
 
-
-# =============================================================
-# APPLICATION
-# =============================================================
 
 app = QApplication(sys.argv)
+
+
+# =============================================================
+# DATABASE
+# =============================================================
+
+database = Database()
+
+identity = database.get_identity()
 
 
 # =============================================================
@@ -22,10 +28,23 @@ app = QApplication(sys.argv)
 def start_securelink(username):
 
     # ---------------------------------------------------------
-    # Hide startup screen
+    # Create identity if this is the first launch
     # ---------------------------------------------------------
 
-    startup.window.hide()
+    user_id = database.create_identity(
+        username
+    )
+
+    start_main_gui(
+        username,
+        user_id
+    )
+
+
+def start_main_gui(
+    username,
+    user_id
+):
 
     # ---------------------------------------------------------
     # Create components
@@ -48,11 +67,10 @@ def start_securelink(username):
 
     gui.network = network
     gui.discovery = discovery
+    gui.database = database
 
     # ---------------------------------------------------------
     # Network → GUI
-    #
-    # Network runs on background threads, so we use Qt signals.
     # ---------------------------------------------------------
 
     network.on_connection = (
@@ -114,7 +132,7 @@ def start_securelink(username):
     )
 
     # ---------------------------------------------------------
-    # Start TCP server
+    # Start networking
     # ---------------------------------------------------------
 
     network.start_server(
@@ -122,30 +140,47 @@ def start_securelink(username):
         5000
     )
 
-    # ---------------------------------------------------------
-    # Start LAN discovery
-    # ---------------------------------------------------------
-
     discovery.start()
 
     # ---------------------------------------------------------
-    # Show main GUI
+    # Show GUI
     # ---------------------------------------------------------
 
     gui.run()
 
 
 # =============================================================
-# STARTUP SCREEN
+# EXISTING IDENTITY
 # =============================================================
 
-startup = StartupGUI()
+if identity:
 
-startup.set_continue_callback(
-    start_securelink
-)
+    username = identity["username"]
+    user_id = identity["user_id"]
 
-startup.run()
+    print(
+        f"Welcome back, {username}"
+    )
+
+    start_main_gui(
+        username,
+        user_id
+    )
+
+
+# =============================================================
+# FIRST LAUNCH
+# =============================================================
+
+else:
+
+    startup = StartupGUI()
+
+    startup.set_continue_callback(
+        start_securelink
+    )
+
+    startup.run()
 
 
 # =============================================================
