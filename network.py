@@ -48,7 +48,8 @@ class Network:
     def accept_connections(self):
         while True:
             client, addr = self.server.accept()
-
+            self.sock = client
+            
             print(
                 f"Incoming connection from {addr}"
             )
