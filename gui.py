@@ -647,19 +647,28 @@ class GUI:
 
         self.hide_typing()
 
-        self.message_box.setEnabled(
-            False
+        connection = self.network.connections.get(
+            user_id
         )
 
-        self.send_button.setEnabled(
-            False
-        )
+        if connection:
 
-        if self.network:
+            self.message_box.setEnabled(
+                True
+            )
 
-            self.network.connect(
-                contact["ip"],
-                int(contact["port"])
+            self.send_button.setEnabled(
+                True
+            )
+
+        else:
+
+            self.message_box.setEnabled(
+                False
+            )
+
+            self.send_button.setEnabled(
+                False
             )
 
     # =========================================================
