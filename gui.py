@@ -818,7 +818,7 @@ class GUI:
 
     def handle_connection(self, connection, username):
 
-        ip, port = connection.getpeername()
+        ip, port = connection.address
 
         user_id = self.network.friend_user_id
 
