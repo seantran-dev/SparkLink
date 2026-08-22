@@ -100,7 +100,7 @@ class Discovery:
                     "last_seen": time.time()
                 }
 
-                if self.on_device_found:
+                if self.scanning and self.on_device_found:
 
                     self.on_device_found(
                         user_id,

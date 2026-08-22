@@ -807,7 +807,7 @@ class GUI:
         username
     ):
 
-        ip = connection.address[0]
+        ip = connection.getpeername()[0]
         port = connection.address[1]
 
         self.add_contact(
