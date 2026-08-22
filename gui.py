@@ -579,6 +579,29 @@ class GUI:
             "port": int(port)
         }
 
+        self.database.save_contact(
+            user_id,
+            username,
+            ip,
+            int(port)
+        )
+
+        for i in range(
+            self.contacts_list.count()
+        ):
+
+            item = self.contacts_list.item(i)
+
+            if item.data(
+                Qt.ItemDataRole.UserRole
+            ) == user_id:
+
+                item.setText(
+                    username
+                )
+
+                return
+
         item = QListWidgetItem(
             username
         )
@@ -587,18 +610,6 @@ class GUI:
             Qt.ItemDataRole.UserRole,
             user_id
         )
-
-        for i in range(
-            self.contacts_list.count()
-        ):
-
-            existing = self.contacts_list.item(i)
-
-            if existing.data(
-                Qt.ItemDataRole.UserRole
-            ) == user_id:
-                existing.setText(username)
-                return
 
         self.contacts_list.addItem(
             item
@@ -960,6 +971,27 @@ class GUI:
             False
         )
     
+    def load_contacts(self):
+
+        contacts = self.database.get_contacts()
+
+        for contact in contacts:
+
+            self.contacts[contact["user_id"]] = contact
+
+            item = QListWidgetItem(
+                contact["username"]
+            )
+
+            item.setData(
+                Qt.ItemDataRole.UserRole,
+                contact["user_id"]
+            )
+
+            self.contacts_list.addItem(
+                item
+            )
+            
     def add_message_bubble(self, message, mine):
 
         bubble = MessageBubble(

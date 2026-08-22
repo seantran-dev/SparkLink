@@ -45,6 +45,7 @@ def start_main_gui(username, user_id):
     gui.discovery = discovery
     gui.database = database
     gui.user_id = user_id
+    gui.load_contacts()
 
     network.on_connection = (
         lambda connection, remote_username:
