@@ -820,7 +820,7 @@ class GUI:
 
         ip, port = connection.address
 
-        user_id = self.network.friend_user_id
+       user_id = connection.user_id
 
         self.add_contact(
             user_id,
@@ -952,8 +952,8 @@ class GUI:
 
     def display_friend_message(self, connection, message):
 
-        user_id = self.network.friend_user_id
-        username = self.network.friend_name
+        user_id = connection.user_id
+        username = connection.username
 
         if not user_id:
             return
@@ -1079,8 +1079,7 @@ class GUI:
         connection
     ):
 
-        username = self.network.friend_name
-
+        username = connection.username
         if username != self.current_contact:
             return
 
