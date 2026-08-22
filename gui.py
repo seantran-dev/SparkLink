@@ -624,7 +624,7 @@ class GUI:
         user_id = item.data(
             Qt.ItemDataRole.UserRole
         )
-        
+
         print(
             "SELECT CONTACT:",
             user_id
@@ -842,6 +842,16 @@ class GUI:
             port
         )
 
+        if user_id == self.current_contact:
+
+            self.message_box.setEnabled(
+                True
+            )
+
+            self.send_button.setEnabled(
+                True
+            )
+
         for i in range(
             self.nearby_list.count()
         ):
@@ -854,7 +864,9 @@ class GUI:
 
             if device and device["user_id"] == user_id:
 
-                self.nearby_list.takeItem(i)
+                self.nearby_list.takeItem(
+                    i
+                )
 
                 break
 
