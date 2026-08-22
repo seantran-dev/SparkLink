@@ -620,6 +620,15 @@ class GUI:
     # =========================================================
 
     def select_contact(self, item):
+        print(
+            "SELECT CONTACT:",
+            user_id
+        )
+
+        print(
+            "AVAILABLE CONNECTIONS:",
+            list(self.network.connections.keys())
+        )
 
         user_id = item.data(
             Qt.ItemDataRole.UserRole

@@ -222,6 +222,16 @@ class Network:
             self.connections[
                 connection.user_id
             ] = connection
+            print(
+                "CONNECTION REGISTERED:",
+                connection.user_id,
+                connection.username
+            )
+
+            print(
+                "ALL CONNECTIONS:",
+                list(self.connections.keys())
+            )
 
             print(
                 f"Connected to {connection.username}"
