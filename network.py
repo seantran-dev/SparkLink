@@ -208,12 +208,21 @@ class Network:
                 )
 
     def send(self, message):
-        if self.sock is None:
-            return
 
-        self.sock.sendall(
-            f"CHAT:{message}\n".encode()
-        )
+        if self.sock is None:
+            return False
+
+        try:
+
+            self.sock.sendall(
+                f"CHAT:{message}\n".encode()
+            )
+
+            return True
+
+        except OSError:
+
+            return False
 
     def send_typing(self):
         if self.sock:

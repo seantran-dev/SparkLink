@@ -902,8 +902,7 @@ class GUI:
         if not message:
             return
 
-        success = self.network.send_message(
-            self.current_contact,
+        success = self.network.send(
             message
         )
 
