@@ -52,9 +52,9 @@ class MessageBubble(QWidget):
             bubble_width
         )
 
-        self.label.setFixedHeight(
-            self.label.sizeHint().height()
-        )
+        self.label.adjustSize()
+
+
 
         if mine:
 
