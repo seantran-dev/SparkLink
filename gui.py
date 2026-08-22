@@ -62,6 +62,8 @@ class GUI:
 
         self.network = None
         self.discovery = None
+        self.database = None
+        self.user_id = None
 
         self.current_contact = None
 
@@ -936,16 +938,24 @@ class GUI:
     # DISPLAY MY MESSAGE
     # =========================================================
 
-    def display_my_message(self, message):
+    def display_my_message(self, message, save=True):
 
-        if self.current_contact:
+        if not self.current_contact:
+            return
 
-            self.conversations.setdefault(
-                self.current_contact,
-                []
-            ).append(
-                ("me", message)
+        if save:
+
+            contact = self.database.get_contact(
+                self.current_contact
             )
+
+            if contact:
+
+                self.database.save_message(
+                    conversation_id=contact["user_id"],
+                    sender_id=self.user_id,
+                    message_ciphertext=message
+                )
 
         self.add_message_bubble(
             message,
@@ -963,15 +973,22 @@ class GUI:
         if not username:
             return
 
-        self.conversations.setdefault(
-            username,
-            []
-        ).append(
-            ("them", message)
+        contact = self.database.get_contact(
+            username
         )
+
+        if contact:
+
+            self.database.save_message(
+                conversation_id=contact["user_id"],
+                sender_id=contact["user_id"],
+                message_ciphertext=message
+            )
 
         if username != self.current_contact:
             return
+
+        self.hide_typing()
 
         self.add_message_bubble(
             message,

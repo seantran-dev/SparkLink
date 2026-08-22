@@ -12,28 +12,13 @@ from database import Database
 app = QApplication(sys.argv)
 
 
-# =============================================================
-# DATABASE
-# =============================================================
-
 database = Database()
-
 identity = database.get_identity()
 
 
-# =============================================================
-# START SECURELINK
-# =============================================================
-
 def start_securelink(username):
 
-    # ---------------------------------------------------------
-    # Create identity if this is the first launch
-    # ---------------------------------------------------------
-
-    user_id = database.create_identity(
-        username
-    )
+    user_id = database.create_identity(username)
 
     start_main_gui(
         username,
@@ -41,37 +26,24 @@ def start_securelink(username):
     )
 
 
-def start_main_gui(
-    username,
-    user_id
-):
-
-    # ---------------------------------------------------------
-    # Create components
-    # ---------------------------------------------------------
+def start_main_gui(username, user_id):
 
     gui = GUI()
 
     network = Network(
+        user_id,
         username
     )
-
+    
     discovery = Discovery(
+        user_id,
         username,
         5000
     )
 
-    # ---------------------------------------------------------
-    # Connect components
-    # ---------------------------------------------------------
-
     gui.network = network
     gui.discovery = discovery
     gui.database = database
-
-    # ---------------------------------------------------------
-    # Network → GUI
-    # ---------------------------------------------------------
 
     network.on_connection = (
         lambda connection, remote_username:
@@ -110,17 +82,14 @@ def start_main_gui(
             )
     )
 
-    # ---------------------------------------------------------
-    # Discovery → GUI
-    # ---------------------------------------------------------
-
     discovery.on_device_found = (
-        lambda username, ip, port:
-            gui.signals.device_found.emit(
-                username,
-                ip,
-                port
-            )
+        lambda user_id, username, ip, port:
+        gui.signals.device_found.emit(
+            user_id,
+            username,
+            ip,
+            port
+        )
     )
 
     discovery.on_device_lost = (
@@ -131,10 +100,6 @@ def start_main_gui(
             )
     )
 
-    # ---------------------------------------------------------
-    # Start networking
-    # ---------------------------------------------------------
-
     network.start_server(
         "0.0.0.0",
         5000
@@ -142,16 +107,8 @@ def start_main_gui(
 
     discovery.start()
 
-    # ---------------------------------------------------------
-    # Show GUI
-    # ---------------------------------------------------------
-
     gui.run()
 
-
-# =============================================================
-# EXISTING IDENTITY
-# =============================================================
 
 if identity:
 
@@ -167,11 +124,6 @@ if identity:
         user_id
     )
 
-
-# =============================================================
-# FIRST LAUNCH
-# =============================================================
-
 else:
 
     startup = StartupGUI()
@@ -182,10 +134,6 @@ else:
 
     startup.run()
 
-
-# =============================================================
-# APPLICATION LOOP
-# =============================================================
 
 sys.exit(
     app.exec()
