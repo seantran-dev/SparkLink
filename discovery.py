@@ -138,22 +138,20 @@ class Discovery:
 
         while self.running:
 
-            if self.scanning:
+            try:
 
-                try:
-
-                    sock.sendto(
-                        message.encode("utf-8"),
-                        (
-                            "<broadcast>",
-                            DISCOVERY_PORT
-                        )
+                sock.sendto(
+                    message.encode("utf-8"),
+                    (
+                        "<broadcast>",
+                        DISCOVERY_PORT
                     )
+                )
 
-                except Exception as e:
+            except Exception as e:
 
-                    print(
-                        f"Broadcast error: {e}"
-                    )
+                print(
+                    f"Broadcast error: {e}"
+                )
 
             time.sleep(2)
