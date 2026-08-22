@@ -916,6 +916,11 @@ class GUI:
 
     def display_my_message(self, message, save=True):
 
+        print("SAVING SENT MESSAGE")
+        print("current_contact:", self.current_contact)
+        print("user_id:", self.user_id)
+        print("database:", self.database)
+
         if not self.current_contact:
             return
 
