@@ -570,31 +570,14 @@ class GUI:
     # CONTACTS
     # =========================================================
 
-    def add_contact(
-        self,
-        username,
-        ip,
-        port
-    ):
+    def add_contact(self, user_id, username, ip, port):
 
-        self.contacts[username] = {
+        self.contacts[user_id] = {
+            "user_id": user_id,
+            "username": username,
             "ip": ip,
-            "port": port
+            "port": int(port)
         }
-
-        if username not in self.conversations:
-
-            self.conversations[username] = []
-
-        # Don't add duplicates
-        for i in range(
-            self.contacts_list.count()
-        ):
-
-            item = self.contacts_list.item(i)
-
-            if item.text() == username:
-                return
 
         item = QListWidgetItem(
             username
@@ -602,8 +585,20 @@ class GUI:
 
         item.setData(
             Qt.ItemDataRole.UserRole,
-            username
+            user_id
         )
+
+        for i in range(
+            self.contacts_list.count()
+        ):
+
+            existing = self.contacts_list.item(i)
+
+            if existing.data(
+                Qt.ItemDataRole.UserRole
+            ) == user_id:
+                existing.setText(username)
+                return
 
         self.contacts_list.addItem(
             item
@@ -615,29 +610,36 @@ class GUI:
 
     def select_contact(self, item):
 
-        username = item.data(
+        user_id = item.data(
             Qt.ItemDataRole.UserRole
         )
 
-        if not username:
+        if not user_id:
             return
 
-        self.current_contact = username
+        contact = self.contacts.get(
+            user_id
+        )
+
+        if not contact:
+            return
+
+        self.current_contact = user_id
 
         self.chat_title.setText(
-            username
+            contact["username"]
         )
 
         self.load_conversation(
-            username
+            user_id
         )
 
         self.message_box.setEnabled(
-            username in self.contacts
+            True
         )
 
         self.send_button.setEnabled(
-            username in self.contacts
+            True
         )
 
         self.hide_typing()
@@ -646,20 +648,19 @@ class GUI:
     # LOAD CONVERSATION
     # =========================================================
 
-    def load_conversation(self, username):
+    def load_conversation(self, user_id):
 
         self.chat.clear()
 
-        messages = self.conversations.get(
-            username,
-            []
+        messages = self.database.get_conversation(
+            user_id
         )
 
-        for sender, text in messages:
+        for message in messages:
 
             self.add_message_bubble(
-                text,
-                sender == "me"
+                message["message_ciphertext"],
+                message["sender_id"] == self.user_id
             )
 
         self.chat.scrollToBottom()
@@ -769,17 +770,14 @@ class GUI:
             f"({ip}:{port})"
         )
 
-        self.current_contact = username
+        self.current_contact = user_id
 
         self.chat_title.setText(
             username
         )
 
-        if username not in self.conversations:
-            self.conversations[username] = []
-
         self.load_conversation(
-            username
+            user_id
         )
 
         self.message_box.setEnabled(
@@ -791,7 +789,6 @@ class GUI:
         )
 
         if self.network:
-
             self.network.connect(
                 ip,
                 port
@@ -805,32 +802,23 @@ class GUI:
 
         ip, port = connection.getpeername()
 
-        self.message_box.setEnabled(
-            True
-        )
-
-        self.send_button.setEnabled(
-            True
-        )
-
-        self.chat_title.setText(
-            username
-        )
+        user_id = self.network.friend_user_id
 
         self.add_contact(
+            user_id,
             username,
             ip,
             port
         )
 
-        self.current_contact = username
+        self.current_contact = user_id
 
         self.chat_title.setText(
             username
         )
 
         self.load_conversation(
-            username
+            user_id
         )
 
         self.message_box.setEnabled(
@@ -841,7 +829,6 @@ class GUI:
             True
         )
 
-        # Remove from nearby
         for i in range(
             self.nearby_list.count()
         ):
@@ -852,15 +839,13 @@ class GUI:
                 Qt.ItemDataRole.UserRole
             )
 
-            if device:
+            if device and device["user_id"] == user_id:
 
-                if device["username"] == username:
+                self.nearby_list.takeItem(
+                    i
+                )
 
-                    self.nearby_list.takeItem(
-                        i
-                    )
-
-                    break
+                break
 
     # =========================================================
     # DISCONNECT
@@ -936,17 +921,11 @@ class GUI:
 
         if save:
 
-            contact = self.database.get_contact(
-                self.current_contact
+            self.database.save_message(
+                conversation_id=self.current_contact,
+                sender_id=self.user_id,
+                message_ciphertext=message
             )
-
-            if contact:
-
-                self.database.save_message(
-                    conversation_id=contact["user_id"],
-                    sender_id=self.user_id,
-                    message_ciphertext=message
-                )
 
         self.add_message_bubble(
             message,
@@ -959,24 +938,19 @@ class GUI:
 
     def display_friend_message(self, connection, message):
 
+        user_id = self.network.friend_user_id
         username = self.network.friend_name
 
-        if not username:
+        if not user_id:
             return
 
-        contact = self.database.get_contact(
-            username
+        self.database.save_message(
+            conversation_id=user_id,
+            sender_id=user_id,
+            message_ciphertext=message
         )
 
-        if contact:
-
-            self.database.save_message(
-                conversation_id=contact["user_id"],
-                sender_id=contact["user_id"],
-                message_ciphertext=message
-            )
-
-        if username != self.current_contact:
+        if user_id != self.current_contact:
             return
 
         self.hide_typing()
