@@ -668,18 +668,8 @@ class GUI:
     # NEARBY DEVICES
     # =========================================================
 
-    def add_nearby_device(
-        self,
-        username,
-        ip,
-        port
-    ):
+    def add_nearby_device(self, user_id, username, ip, port):
 
-        # Don't show ourselves
-        if username == "":
-            return
-
-        # Update an existing device
         for i in range(
             self.nearby_list.count()
         ):
@@ -690,23 +680,22 @@ class GUI:
                 Qt.ItemDataRole.UserRole
             )
 
-            if device:
+            if device and device["ip"] == ip:
 
-                if device["ip"] == ip:
+                device["user_id"] = user_id
+                device["username"] = username
+                device["port"] = int(port)
 
-                    device["username"] = username
-                    device["port"] = port
+                item.setData(
+                    Qt.ItemDataRole.UserRole,
+                    device
+                )
 
-                    item.setData(
-                        Qt.ItemDataRole.UserRole,
-                        device
-                    )
+                item.setText(
+                    username
+                )
 
-                    item.setText(
-                        username
-                    )
-
-                    return
+                return
 
         item = QListWidgetItem(
             username
@@ -715,9 +704,10 @@ class GUI:
         item.setData(
             Qt.ItemDataRole.UserRole,
             {
+                "user_id": user_id,
                 "username": username,
                 "ip": ip,
-                "port": port
+                "port": int(port)
             }
         )
 
@@ -759,10 +749,7 @@ class GUI:
     # SELECT NEARBY
     # =========================================================
 
-    def select_nearby(
-        self,
-        item
-    ):
+    def select_nearby(self, item):
 
         device = item.data(
             Qt.ItemDataRole.UserRole
@@ -771,9 +758,10 @@ class GUI:
         if not device:
             return
 
+        user_id = device["user_id"]
         username = device["username"]
         ip = device["ip"]
-        port = device["port"]
+        port = int(device["port"])
 
         print(
             f"Connecting to "
@@ -788,7 +776,6 @@ class GUI:
         )
 
         if username not in self.conversations:
-
             self.conversations[username] = []
 
         self.load_conversation(
