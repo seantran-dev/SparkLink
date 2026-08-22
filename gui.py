@@ -869,14 +869,9 @@ class GUI:
     # DISCONNECT
     # =========================================================
 
-    def handle_disconnect(
-        self,
-        connection
-    ):
+    def handle_disconnect(self, connection):
 
-        username = self.network.friend_name
-
-        if username != self.current_contact:
+        if connection.user_id != self.current_contact:
             return
 
         self.message_box.setEnabled(
