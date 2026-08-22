@@ -652,23 +652,15 @@ class GUI:
         )
 
         if connection:
-
-            self.message_box.setEnabled(
-                True
-            )
-
-            self.send_button.setEnabled(
-                True
-            )
-
+            self.message_box.setEnabled(True)
+            self.send_button.setEnabled(True)
         else:
+            self.message_box.setEnabled(False)
+            self.send_button.setEnabled(False)
 
-            self.message_box.setEnabled(
-                False
-            )
-
-            self.send_button.setEnabled(
-                False
+            self.network.connect(
+                contact["ip"],
+                int(contact["port"])
             )
 
     # =========================================================
@@ -838,15 +830,6 @@ class GUI:
             port
         )
 
-
-        self.message_box.setEnabled(
-            True
-        )
-
-        self.send_button.setEnabled(
-            True
-        )
-
         for i in range(
             self.nearby_list.count()
         ):
@@ -859,9 +842,7 @@ class GUI:
 
             if device and device["user_id"] == user_id:
 
-                self.nearby_list.takeItem(
-                    i
-                )
+                self.nearby_list.takeItem(i)
 
                 break
 
