@@ -74,7 +74,20 @@ class Network:
                 daemon=True
             ).start()
 
-    def connect(self, host, port):
+    def connect(self, host, port, user_id):
+
+        if user_id in self.connections:
+            print(
+                f"Already connected to {user_id}"
+            )
+            return
+
+        if self.user_id > user_id:
+            print(
+                f"Waiting for {user_id} to initiate connection."
+            )
+            return
+
         threading.Thread(
             target=self._connect,
             args=(host, port),

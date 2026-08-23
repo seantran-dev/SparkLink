@@ -625,18 +625,6 @@ class GUI:
             Qt.ItemDataRole.UserRole
         )
 
-        print(
-            "SELECT CONTACT:",
-            user_id
-        )
-
-        print(
-            "AVAILABLE CONNECTIONS:",
-            list(self.network.connections.keys())
-        )
-
-        
-
         if not user_id:
             return
 
@@ -670,11 +658,6 @@ class GUI:
             self.message_box.setEnabled(False)
             self.send_button.setEnabled(False)
 
-            self.network.connect(
-                contact["ip"],
-                int(contact["port"])
-            )
-
     # =========================================================
     # LOAD CONVERSATION
     # =========================================================
@@ -700,7 +683,30 @@ class GUI:
     # NEARBY DEVICES
     # =========================================================
 
-    def add_nearby_device(self, user_id, username, ip, port):
+    def add_nearby_device(
+        self,
+        user_id,
+        username,
+        ip,
+        port
+    ):
+
+        if user_id == self.user_id:
+            return
+
+        port = int(port)
+
+        if user_id in self.contacts:
+
+            if user_id not in self.network.connections:
+
+                if self.user_id < user_id:
+
+                    self.network.connect(
+                        ip,
+                        port,
+                        user_id
+                    )
 
         for i in range(
             self.nearby_list.count()
@@ -712,22 +718,24 @@ class GUI:
                 Qt.ItemDataRole.UserRole
             )
 
-            if device and device["ip"] == ip:
+            if device:
 
-                device["user_id"] = user_id
-                device["username"] = username
-                device["port"] = int(port)
+                if device["user_id"] == user_id:
 
-                item.setData(
-                    Qt.ItemDataRole.UserRole,
-                    device
-                )
+                    device["username"] = username
+                    device["ip"] = ip
+                    device["port"] = port
 
-                item.setText(
-                    username
-                )
+                    item.setData(
+                        Qt.ItemDataRole.UserRole,
+                        device
+                    )
 
-                return
+                    item.setText(
+                        username
+                    )
+
+                    return
 
         item = QListWidgetItem(
             username
@@ -739,7 +747,7 @@ class GUI:
                 "user_id": user_id,
                 "username": username,
                 "ip": ip,
-                "port": int(port)
+                "port": port
             }
         )
 
