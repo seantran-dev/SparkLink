@@ -56,6 +56,8 @@ class Database:
             )
         """)
 
+        
+
         # -----------------------------------------------------
         # Messages
         # -----------------------------------------------------
@@ -198,6 +200,19 @@ class Database:
             return None
 
         return dict(row)
+
+    def delete_contact(self, user_id):
+
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            DELETE FROM contacts
+            WHERE user_id = ?
+        """, (
+            user_id,
+        ))
+
+        self.connection.commit()
 
     def get_contacts(self):
 

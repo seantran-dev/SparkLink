@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QSplitter,
+    QSizePolicy,
 )
 
 from PySide6.QtCore import (
@@ -15,6 +16,7 @@ from PySide6.QtCore import (
     QObject,
     Signal,
     QTimer,
+    QSize,
 )
 
 from PySide6.QtGui import (
@@ -64,6 +66,101 @@ class ChatList(QListWidget):
 
             self.gui.resize_chat_bubbles()
 
+
+
+class ContactWidget(QWidget):
+
+    def __init__(self, username, delete_callback, family):
+
+        super().__init__()
+
+        self.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            False
+        )
+
+        self.setFixedHeight(
+            40
+        )
+
+        layout = QHBoxLayout()
+
+        layout.setContentsMargins(
+            10,
+            0,
+            5,
+            0
+        )
+
+        layout.setSpacing(5)
+
+        self.name_label = QLabel(
+            username
+        )
+
+        self.name_label.setFont(
+            QFont(
+                family,
+                16
+            )
+        )
+
+        self.name_label.setStyleSheet("""
+            QLabel {
+                background: transparent;
+                color: #F4F4F4;
+            }
+        """)
+
+        self.name_label.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred
+        )
+
+        self.delete_button = QPushButton(
+            "×"
+        )
+
+        self.delete_button.setFixedSize(
+            24,
+            28
+        )
+
+        self.delete_button.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                color: #777777;
+                font-size: 18px;
+                padding: 0px;
+            }
+
+            QPushButton:hover {
+                background: transparent;
+                color: #FF5555;
+            }
+
+            QPushButton:pressed {
+                background: transparent;
+                color: #FF5555;
+            }
+        """)
+
+        self.delete_button.clicked.connect(
+            delete_callback
+        )
+
+        layout.addWidget(
+            self.name_label
+        )
+
+        layout.addWidget(
+            self.delete_button
+        )
+
+        self.setLayout(
+            layout
+        )
 
 class GUI:
 
@@ -213,14 +310,19 @@ class GUI:
 
         QListWidget::item {
             border: none;
+            padding: 0px;
+            color: transparent;
         }
+
 
         QListWidget::item:hover {
             background-color: #1A1A1A;
+            color: transparent;
         }
 
         QListWidget::item:selected {
             background-color: #222222;
+            color: transparent;
         }
 
         QLineEdit {
@@ -617,23 +719,45 @@ class GUI:
                 Qt.ItemDataRole.UserRole
             ) == user_id:
 
-                item.setText(
-                    username
+                widget = self.contacts_list.itemWidget(
+                    item
                 )
+
+                if widget:
+
+                    widget.name_label.setText(
+                        username
+                    )
 
                 return
 
-        item = QListWidgetItem(
-            username
-        )
+        item = QListWidgetItem()
 
         item.setData(
             Qt.ItemDataRole.UserRole,
             user_id
         )
 
+        widget = ContactWidget(
+            username,
+            lambda: self.delete_contact(user_id),
+            self.family
+        )
+
         self.contacts_list.addItem(
             item
+        )
+
+        self.contacts_list.setItemWidget(
+            item,
+            widget
+        )
+
+        item.setSizeHint(
+            QSize(
+                0,
+                40
+            )
         )
 
     # =========================================================
@@ -789,9 +913,7 @@ class GUI:
 
                     return
 
-        item = QListWidgetItem(
-            username
-        )
+        item = QListWidgetItem()
 
         item.setData(
             Qt.ItemDataRole.UserRole,
@@ -1123,20 +1245,116 @@ class GUI:
 
         for contact in contacts:
 
-            self.contacts[contact["user_id"]] = contact
+            user_id = contact["user_id"]
 
-            item = QListWidgetItem(
-                contact["username"]
-            )
+            self.contacts[user_id] = contact
+
+            item = QListWidgetItem()
 
             item.setData(
                 Qt.ItemDataRole.UserRole,
-                contact["user_id"]
+                user_id
+            )
+
+            item.setText("")
+
+            widget = ContactWidget(
+                contact["username"],
+                lambda user_id=user_id:
+                    self.delete_contact(user_id),
+                self.family
             )
 
             self.contacts_list.addItem(
                 item
             )
+
+            self.contacts_list.setItemWidget(
+                item,
+                widget
+            )
+
+            item.setSizeHint(
+                QSize(
+                    0,
+                    40
+                )
+            )
+    def delete_contact(self, user_id):
+
+        contact = self.contacts.get(
+            user_id
+        )
+
+        if not contact:
+            return
+
+        self.database.delete_contact(
+            user_id
+        )
+
+        self.contacts.pop(
+            user_id,
+            None
+        )
+
+        self.unread_counts.pop(
+            user_id,
+            None
+        )
+
+        connection = self.network.connections.get(
+            user_id
+        )
+
+        if connection:
+
+            try:
+                connection.sock.close()
+            except OSError:
+                pass
+
+        for i in range(
+            self.contacts_list.count()
+        ):
+
+            item = self.contacts_list.item(i)
+
+            if item.data(
+                Qt.ItemDataRole.UserRole
+            ) == user_id:
+
+                self.contacts_list.takeItem(
+                    i
+                )
+
+                break
+
+        self.remove_nearby_device(
+            contact["username"],
+            contact["ip"]
+        )
+
+        if self.current_contact == user_id:
+
+            self.current_contact = None
+
+            self.chat.clear()
+
+            self.chat_title.setText(
+                "Select a contact"
+            )
+
+            self.message_box.setEnabled(
+                False
+            )
+
+            self.send_button.setEnabled(
+                False
+            )
+
+            self.hide_typing()
+
     def resize_chat_bubbles(self):
 
         width = self.chat.viewport().width()
