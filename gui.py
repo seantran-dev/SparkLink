@@ -89,6 +89,7 @@ class GUI:
         #     }
         # }
         self.contacts = {}
+        self.unread_counts = {}
 
         # In-memory conversations for now.
         #
@@ -645,6 +646,13 @@ class GUI:
             Qt.ItemDataRole.UserRole
         )
 
+        self.unread_counts[user_id] = 0
+
+        self.update_contact_item(
+            user_id
+        )
+
+
         if not user_id:
             return
 
@@ -1023,6 +1031,18 @@ class GUI:
         )
 
         if user_id != self.current_contact:
+
+            self.unread_counts[user_id] = (
+                self.unread_counts.get(
+                    user_id,
+                    0
+                ) + 1
+            )
+
+            self.update_contact_item(
+                user_id
+            )
+
             return
 
         self.hide_typing()
@@ -1031,7 +1051,49 @@ class GUI:
             message,
             False
         )
-    
+
+
+    def update_contact_item(self, user_id):
+
+        count = self.unread_counts.get(
+            user_id,
+            0
+        )
+
+        for i in range(
+            self.contacts_list.count()
+        ):
+
+            item = self.contacts_list.item(i)
+
+            if item.data(
+                Qt.ItemDataRole.UserRole
+            ) != user_id:
+                continue
+
+            contact = self.contacts.get(
+                user_id
+            )
+
+            if not contact:
+                return
+
+            username = contact["username"]
+
+            if count > 0:
+
+                item.setText(
+                    f"{username}  ({count})"
+                )
+
+            else:
+
+                item.setText(
+                    username
+                )
+
+            return
+
     def load_contacts(self):
 
         contacts = self.database.get_contacts()
