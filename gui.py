@@ -870,15 +870,6 @@ class GUI:
         port = int(port)
 
         if user_id in self.contacts:
-
-            if user_id not in self.network.connections:
-
-                self.network.connect(
-                    ip,
-                    port,
-                    user_id
-                )
-
             return
 
         if not self.scanning:

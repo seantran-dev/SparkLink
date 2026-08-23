@@ -95,6 +95,16 @@ def start_main_gui(username, user_id):
         )
     )
 
+    discovery.on_contact_found = (
+        lambda user_id, username, ip, port:
+            gui.handle_discovered_contact(
+                user_id,
+                username,
+                ip,
+                port
+            )
+    )
+    
     discovery.on_device_lost = (
         lambda username, ip:
             gui.signals.device_lost.emit(
