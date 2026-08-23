@@ -645,18 +645,29 @@ class GUI:
             user_id
         )
 
-        self.hide_typing()
-
         connection = self.network.connections.get(
             user_id
         )
 
         if connection:
-            self.message_box.setEnabled(True)
-            self.send_button.setEnabled(True)
+
+            self.message_box.setEnabled(
+                True
+            )
+
+            self.send_button.setEnabled(
+                True
+            )
+
         else:
-            self.message_box.setEnabled(False)
-            self.send_button.setEnabled(False)
+
+            self.message_box.setEnabled(
+                False
+            )
+
+            self.send_button.setEnabled(
+                False
+            )
 
     # =========================================================
     # LOAD CONVERSATION
@@ -700,13 +711,11 @@ class GUI:
 
             if user_id not in self.network.connections:
 
-                if self.user_id < user_id:
-
-                    self.network.connect(
-                        ip,
-                        port,
-                        user_id
-                    )
+                self.network.connect(
+                    ip,
+                    port,
+                    user_id
+                )
 
         for i in range(
             self.nearby_list.count()

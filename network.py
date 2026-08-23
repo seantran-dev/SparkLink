@@ -5,6 +5,7 @@ import threading
 class Connection:
 
     def __init__(self, sock, user_id=None, username=None):
+
         self.sock = sock
         self.user_id = user_id
         self.username = username
@@ -14,6 +15,7 @@ class Connection:
 class Network:
 
     def __init__(self, user_id, username):
+
         self.server = None
         self.gui = None
         self.user_id = user_id
@@ -26,6 +28,7 @@ class Network:
         self.on_disconnect = None
 
     def start_server(self, host, port):
+
         self.server = socket.socket(
             socket.AF_INET,
             socket.SOCK_STREAM
@@ -53,39 +56,43 @@ class Network:
         ).start()
 
     def accept_connections(self):
+
         while True:
-            client, addr = self.server.accept()
 
-            connection = Connection(
-                client
-            )
+            try:
 
-            print(
-                f"Incoming connection from {addr}"
-            )
+                client, addr = self.server.accept()
 
-            client.sendall(
-                f"IDENTITY:{self.user_id}|{self.username}\n".encode()
-            )
+                connection = Connection(
+                    client
+                )
 
-            threading.Thread(
-                target=self.receive,
-                args=(connection,),
-                daemon=True
-            ).start()
+                print(
+                    f"Incoming connection from {addr}"
+                )
+
+                client.sendall(
+                    f"IDENTITY:{self.user_id}|{self.username}\n".encode()
+                )
+
+                threading.Thread(
+                    target=self.receive,
+                    args=(connection,),
+                    daemon=True
+                ).start()
+
+            except OSError:
+
+                break
 
     def connect(self, host, port, user_id):
 
         if user_id in self.connections:
+
             print(
                 f"Already connected to {user_id}"
             )
-            return
 
-        if self.user_id > user_id:
-            print(
-                f"Waiting for {user_id} to initiate connection."
-            )
             return
 
         threading.Thread(
@@ -95,6 +102,7 @@ class Network:
         ).start()
 
     def _connect(self, host, port):
+
         sock = socket.socket(
             socket.AF_INET,
             socket.SOCK_STREAM
@@ -103,6 +111,7 @@ class Network:
         sock.settimeout(5)
 
         try:
+
             sock.connect(
                 (host, port)
             )
@@ -128,28 +137,37 @@ class Network:
             ).start()
 
         except socket.timeout:
+
             print(
                 f"Connection to {host}:{port} timed out."
             )
+
             sock.close()
 
         except ConnectionRefusedError:
+
             print(
                 f"Connection refused by {host}:{port}."
             )
+
             sock.close()
 
         except OSError as e:
+
             print(
                 f"Connection failed: {e}"
             )
+
             sock.close()
 
     def receive(self, connection):
+
         buffer = ""
 
         while True:
+
             try:
+
                 data = connection.sock.recv(
                     4096
                 )
@@ -162,6 +180,7 @@ class Network:
                 )
 
                 while "\n" in buffer:
+
                     message, buffer = buffer.split(
                         "\n",
                         1
@@ -181,44 +200,60 @@ class Network:
                 BrokenPipeError,
                 OSError
             ):
+
                 print(
                     "Connection closed."
                 )
+
                 break
 
         if connection.user_id in self.connections:
-            del self.connections[
+
+            if self.connections[
                 connection.user_id
-            ]
+            ] is connection:
+
+                del self.connections[
+                    connection.user_id
+                ]
 
         if self.on_disconnect:
+
             self.on_disconnect(
                 connection
             )
 
     def handle_message(self, connection, message):
+
         if message.startswith("CHAT:"):
+
             text = message[5:]
 
             if self.on_message:
+
                 self.on_message(
                     connection,
                     text
                 )
 
         elif message == "TYPING":
+
             if self.on_typing:
+
                 self.on_typing(
                     connection
                 )
 
         elif message == "STOP_TYPING":
+
             if self.on_stop_typing:
+
                 self.on_stop_typing(
                     connection
                 )
 
         elif message.startswith("IDENTITY:"):
+
             identity = message[9:]
 
             parts = identity.split(
@@ -232,31 +267,36 @@ class Network:
             connection.user_id = parts[0]
             connection.username = parts[1]
 
+            existing = self.connections.get(
+                connection.user_id
+            )
+
+            if existing is not None:
+
+                if existing is not connection:
+
+                    try:
+                        existing.sock.close()
+                    except OSError:
+                        pass
+
             self.connections[
                 connection.user_id
             ] = connection
-            print(
-                "CONNECTION REGISTERED:",
-                connection.user_id,
-                connection.username
-            )
-
-            print(
-                "ALL CONNECTIONS:",
-                list(self.connections.keys())
-            )
 
             print(
                 f"Connected to {connection.username}"
             )
 
             if self.on_connection:
+
                 self.on_connection(
                     connection,
                     connection.username
                 )
 
     def send(self, user_id, message):
+
         connection = self.connections.get(
             user_id
         )
@@ -265,6 +305,7 @@ class Network:
             return False
 
         try:
+
             connection.sock.sendall(
                 f"CHAT:{message}\n".encode()
             )
@@ -272,30 +313,41 @@ class Network:
             return True
 
         except OSError:
+
             return False
 
     def send_typing(self, user_id):
+
         connection = self.connections.get(
             user_id
         )
 
         if connection:
+
             try:
+
                 connection.sock.sendall(
                     "TYPING\n".encode()
                 )
+
             except OSError:
+
                 pass
 
     def send_stop_typing(self, user_id):
+
         connection = self.connections.get(
             user_id
         )
 
         if connection:
+
             try:
+
                 connection.sock.sendall(
                     "STOP_TYPING\n".encode()
                 )
+
             except OSError:
+
                 pass
