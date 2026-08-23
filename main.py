@@ -41,6 +41,7 @@ def start_main_gui(username, user_id):
         5000
     )
 
+
     gui.network = network
     gui.discovery = discovery
     gui.database = database

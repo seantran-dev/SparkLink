@@ -337,10 +337,9 @@ class StartupGUI:
             return
 
         if self.on_continue:
+            self.on_continue(username)
 
-            self.on_continue(
-                username
-            )
+        self.window.close()
 
     # =========================================================
     # CALLBACK

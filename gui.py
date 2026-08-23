@@ -757,6 +757,9 @@ class GUI:
 
             return
 
+        if not self.scanning:
+            return
+
         for i in range(
             self.nearby_list.count()
         ):
@@ -879,7 +882,8 @@ class GUI:
         if self.network:
             self.network.connect(
                 ip,
-                port
+                port,
+                user_id
             )
 
     # =========================================================
@@ -929,6 +933,25 @@ class GUI:
 
                 break
 
+    def handle_discovered_contact(
+        self,
+        user_id,
+        username,
+        ip,
+        port
+    ):
+
+        if user_id not in self.contacts:
+            return
+
+        if user_id in self.network.connections:
+            return
+
+        self.network.connect(
+            ip,
+            int(port),
+            user_id
+        )
     # =========================================================
     # DISCONNECT
     # =========================================================

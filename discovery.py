@@ -18,6 +18,7 @@ class Discovery:
         self.sock = None
         self.devices = {}
         self.on_device_found = None
+        self.on_contact_found = None
         self.on_device_lost = None
 
     def start_scan(self):
@@ -100,9 +101,18 @@ class Discovery:
                     "last_seen": time.time()
                 }
 
-                if self.on_device_found:
+                if self.on_device_found and self.scanning:
 
                     self.on_device_found(
+                        user_id,
+                        username,
+                        ip,
+                        port
+                    )
+
+                if self.on_contact_found:
+
+                    self.on_contact_found(
                         user_id,
                         username,
                         ip,
