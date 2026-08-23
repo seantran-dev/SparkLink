@@ -1156,8 +1156,10 @@ class GUI:
         connection
     ):
 
+        user_id = connection.user_id
         username = connection.username
-        if username != self.current_contact:
+
+        if user_id != self.current_contact:
             return
 
         self.typing_label.setText(
