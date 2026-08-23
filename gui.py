@@ -697,6 +697,8 @@ class GUI:
 
             self.typing_label.show()
 
+            self.chat.scrollToBottom()
+
     # =========================================================
     # LOAD CONVERSATION
     # =========================================================
@@ -942,6 +944,8 @@ class GUI:
 
         self.typing_label.show()
 
+        self.chat.scrollToBottom()
+
     # =========================================================
     # SEND MESSAGE
     # =========================================================
@@ -1168,6 +1172,8 @@ class GUI:
 
         self.typing_label.show()
 
+        self.chat.scrollToBottom()
+
     # =========================================================
     # HIDE TYPING
     # =========================================================
@@ -1175,6 +1181,8 @@ class GUI:
     def hide_typing(self):
 
         self.typing_label.hide()
+
+        self.chat.scrollToBottom()
 
     # =========================================================
     # SCAN
