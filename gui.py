@@ -717,6 +717,8 @@ class GUI:
                     user_id
                 )
 
+            return
+
         for i in range(
             self.nearby_list.count()
         ):
