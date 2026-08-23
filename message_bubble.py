@@ -80,6 +80,11 @@ class MessageBubble(QWidget):
                 }
             """)
 
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Minimum
+        )
+
         layout = QHBoxLayout()
 
         layout.setContentsMargins(

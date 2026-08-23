@@ -51,6 +51,19 @@ class ChatList(QListWidget):
             - int(delta / 120 * scroll_speed)
         )
 
+    def resizeEvent(self, event):
+
+        super().resizeEvent(
+            event
+        )
+
+        if hasattr(
+            self,
+            "gui"
+        ):
+
+            self.gui.resize_chat_bubbles()
+
 
 class GUI:
 
@@ -138,6 +151,11 @@ class GUI:
         self.window.resize(
             1000,
             650
+        )
+
+        self.window.setMinimumSize(
+            1000,
+            250
         )
 
         # =====================================================
@@ -433,6 +451,8 @@ class GUI:
 
         self.chat = ChatList()
 
+        self.chat.gui = self
+
         self.chat.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
@@ -659,6 +679,8 @@ class GUI:
                 True
             )
 
+            self.typing_label.hide()
+
         else:
 
             self.message_box.setEnabled(
@@ -668,6 +690,12 @@ class GUI:
             self.send_button.setEnabled(
                 False
             )
+
+            self.typing_label.setText(
+                "Offline"
+            )
+
+            self.typing_label.show()
 
     # =========================================================
     # LOAD CONVERSATION
@@ -871,6 +899,8 @@ class GUI:
                 True
             )
 
+            self.hide_typing()
+
         for i in range(
             self.nearby_list.count()
         ):
@@ -1018,7 +1048,30 @@ class GUI:
             self.contacts_list.addItem(
                 item
             )
-            
+    def resize_chat_bubbles(self):
+
+        width = self.chat.viewport().width()
+
+        for i in range(
+            self.chat.count()
+        ):
+
+            item = self.chat.item(i)
+
+            bubble = self.chat.itemWidget(
+                item
+            )
+
+            if bubble:
+
+                bubble.setFixedWidth(
+                    width
+                )
+
+                item.setSizeHint(
+                    bubble.sizeHint()
+                )
+                
     def add_message_bubble(self, message, mine):
 
         bubble = MessageBubble(
