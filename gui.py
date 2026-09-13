@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QSplitter,
     QSizePolicy,
+    QDialog,
 )
 
 from PySide6.QtCore import (
@@ -396,8 +397,10 @@ class GUI:
         # Contacts title
         # -----------------------------------------------------
 
+        contacts_header = QHBoxLayout()
+
         contacts_label = QLabel(
-            "CONTACTS"
+            "MESSAGES"
         )
 
         contacts_label.setFont(
@@ -416,8 +419,53 @@ class GUI:
             }
         """)
 
-        sidebar_layout.addWidget(
+        self.add_contact_button = QPushButton(
+            "+"
+        )
+
+        self.add_contact_button.setFixedSize(
+            24,
+            24
+        )
+
+        self.add_contact_button.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                color: #777777;
+                font-size: 20px;
+                padding: 0px;
+                margin-top: -12px;
+            }
+
+            QPushButton:hover {
+                background: transparent;
+                color: #FFD24A;
+            }
+
+            QPushButton:pressed {
+                background: transparent;
+                color: #FFD24A;
+            }
+        """)
+
+        self.add_contact_button.clicked.connect(
+            self.show_contact_selector
+        )
+
+        contacts_header.addWidget(
             contacts_label
+        )
+
+        contacts_header.addStretch()
+
+        contacts_header.addWidget(
+            self.add_contact_button,
+            alignment=Qt.AlignmentFlag.AlignVCenter
+        )
+
+        sidebar_layout.addLayout(
+            contacts_header
         )
 
         # -----------------------------------------------------
@@ -425,6 +473,8 @@ class GUI:
         # -----------------------------------------------------
 
         self.contacts_list = QListWidget()
+
+        
 
         self.contacts_list.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
@@ -759,6 +809,152 @@ class GUI:
                 40
             )
         )
+
+    def show_contact_selector(self):
+
+        dialog = QDialog(
+            self.window
+        )
+
+        dialog.setWindowTitle(
+            "Select Contact"
+        )
+
+        dialog.setFixedSize(
+            300,
+            400
+        )
+
+        layout = QVBoxLayout()
+
+        label = QLabel(
+            "SELECT CONTACT"
+        )
+
+        label.setFont(
+            QFont(
+                self.family,
+                12,
+                QFont.Weight.Bold
+            )
+        )
+
+        contacts_list = QListWidget()
+
+        contacts_list.setStyleSheet("""
+            QListWidget {
+                background-color: #111111;
+                border: none;
+                outline: none;
+                padding: 10px;
+                color: #F4F4F4;
+            }
+
+            QListWidget::item {
+                color: #F4F4F4;
+                padding: 8px;
+            }
+
+            QListWidget::item:hover {
+                background-color: #1A1A1A;
+            }
+
+            QListWidget::item:selected {
+                background-color: #222222;
+            }
+        """)
+
+        contacts = self.database.get_contacts()
+
+        for contact in contacts:
+
+            user_id = contact["user_id"]
+
+            # Don't show contacts already visible
+            visible = False
+
+            for i in range(
+                self.contacts_list.count()
+            ):
+
+                item = self.contacts_list.item(i)
+
+                if item.data(
+                    Qt.ItemDataRole.UserRole
+                ) == user_id:
+
+                    visible = True
+                    break
+
+            if visible:
+                continue
+
+            item = QListWidgetItem(
+                contact["username"]
+            )
+
+            item.setFont(
+                QFont(
+                    self.family,
+                    16
+                )
+            )
+
+
+            item.setData(
+                Qt.ItemDataRole.UserRole,
+                user_id
+            )
+
+            contacts_list.addItem(
+                item
+            )
+
+        layout.addWidget(
+            label
+        )
+
+        layout.addWidget(
+            contacts_list
+        )
+
+        dialog.setLayout(
+            layout
+        )
+
+        def restore_contact(item):
+
+            user_id = item.data(
+                Qt.ItemDataRole.UserRole
+            )
+
+            contact = self.contacts.get(
+                user_id
+            )
+
+            if not contact:
+                contact = self.database.get_contact(
+                    user_id
+                )
+
+            if not contact:
+                return
+
+            self.add_contact(
+                contact["user_id"],
+                contact["username"],
+                contact["ip"],
+                contact["port"]
+            )
+
+            dialog.accept()
+
+        contacts_list.itemClicked.connect(
+            restore_contact
+        )
+
+        dialog.exec()
+
 
     # =========================================================
     # SELECT CONTACT
