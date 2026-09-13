@@ -270,7 +270,6 @@ class FileBubble(QWidget):
                 QUrl.fromLocalFile(str(path))
             )
 
-And your imports need:
 
 class GUI:
 
