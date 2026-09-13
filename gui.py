@@ -167,33 +167,92 @@ class ContactWidget(QWidget):
             layout
         )
 
-class FileBubble(QPushButton):
-    def __init__(self, filename, file_path, mine, parent=None):
-        super().__init__(f"📎  {filename}", parent)
+class FileBubble(QWidget):
+    def __init__(self, filename, file_path, mine):
+        super().__init__()
 
         self.file_path = file_path
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFont(QFont(parent.family, 16) if parent else QFont("", 16))
 
-        self.setStyleSheet("""
-            QPushButton {
-                background-color: #1A1A1A;
-                color: #FFD24A;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 14px;
-                text-align: left;
-            }
+        font_id = QFontDatabase.addApplicationFont(
+            "fonts/blender/BlenderPro-Medium.ttf"
+        )
+        family = QFontDatabase.applicationFontFamilies(font_id)[0]
 
-            QPushButton:hover {
-                background-color: #242424;
-            }
-        """)
+        self.label = QLabel(f"<u>{filename}</u>")
+        self.label.setFont(
+            QFont(
+                family,
+                18
+            )
+        )
+        self.label.setCursor(
+            Qt.CursorShape.PointingHandCursor
+        )
 
-        self.clicked.connect(self.open_file)
+        text_width = (
+            self.label
+            .fontMetrics()
+            .horizontalAdvance(f"{filename}")
+        )
 
-    def open_file(self):
+        bubble_width = min(
+            text_width + 36,
+            500
+        )
+
+        self.label.setFixedWidth(
+            bubble_width
+        )
+
+        if mine:
+            self.label.setStyleSheet("""
+                QLabel {
+                    background-color: rgba(20, 40, 35, 230);
+                    color: #7dffb2;
+                    border: 1px solid #00ff99;
+                    border-radius: 3px;
+                    padding: 8px 12px;
+                }
+            """)
+        else:
+            self.label.setStyleSheet("""
+                QLabel {
+                    background-color: rgba(10, 20, 25, 230);
+                    color: #00D6E6;
+                    border: 1px solid #00909E;
+                    border-radius: 3px;
+                    padding: 8px 12px;
+                }
+            """)
+
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Minimum
+        )
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(
+            10,
+            5,
+            10,
+            5
+        )
+        layout.setSpacing(0)
+
+        if mine:
+            layout.addStretch()
+            layout.addWidget(self.label)
+        else:
+            layout.addWidget(self.label)
+            layout.addStretch()
+
+        self.setLayout(layout)
+
+        self.label.mousePressEvent = self.open_file
+
+    def open_file(self, event):
         path = Path(self.file_path).resolve()
+
         QDesktopServices.openUrl(
             QUrl.fromLocalFile(str(path))
         )
@@ -1452,7 +1511,6 @@ class GUI:
             filename,
             file_path,
             False,
-            self.window
         )
 
         item = QListWidgetItem()
@@ -1467,7 +1525,6 @@ class GUI:
             filename,
             file_path,
             True,
-            self.window
         )
 
         item = QListWidgetItem()
