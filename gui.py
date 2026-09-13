@@ -1053,6 +1053,11 @@ class GUI:
             if not contact:
                 return
 
+            self.database.set_contact_hidden(
+                user_id,
+                False
+            )
+
             self.add_contact(
                 contact["user_id"],
                 contact["username"],
@@ -1679,7 +1684,7 @@ class GUI:
 
     def load_contacts(self):
 
-        contacts = self.database.get_contacts()
+        contacts = self.database.get_visible_contacts()
 
         for contact in contacts:
 
@@ -1723,6 +1728,12 @@ class GUI:
 
         if user_id not in self.contacts:
             return
+
+        self.database.set_contact_hidden(
+            user_id,
+            True
+        )
+
 
         # Hide the contact from the sidebar
         for i in range(

@@ -49,12 +49,20 @@ class Database:
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contacts (
-                user_id TEXT PRIMARY KEY,
-                username TEXT NOT NULL,
-                ip TEXT,
-                port INTEGER
-            )
+            user_id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            ip TEXT,
+            port INTEGER,
+            hidden INTEGER NOT NULL DEFAULT 0
+        )
         """)
+        try:
+            cursor.execute("""
+                ALTER TABLE contacts
+                ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0
+            """)
+        except sqlite3.OperationalError:
+            pass
 
         
 
@@ -153,6 +161,17 @@ class Database:
     # CONTACTS
     # =========================================================
 
+    def set_contact_hidden(self, user_id, hidden):
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            UPDATE contacts
+            SET hidden = ?
+            WHERE user_id = ?
+        """, (int(hidden), user_id))
+
+        self.connection.commit()
+
     def save_contact(
         self,
         user_id,
@@ -241,6 +260,18 @@ class Database:
             dict(row)
             for row in cursor.fetchall()
         ]
+
+    def get_visible_contacts(self):
+        cursor = self.connection.cursor()
+
+        cursor.execute("""
+            SELECT user_id, username, ip, port
+            FROM contacts
+            WHERE hidden = 0
+            ORDER BY username
+        """)
+
+        return [dict(row) for row in cursor.fetchall()]
 
     # =========================================================
     # MESSAGES
