@@ -147,7 +147,7 @@ class ContactWidget(QWidget):
         """)
 
         self.delete_button.clicked.connect(
-            delete_callback
+            lambda: delete_callback()
         )
 
         layout.addWidget(
@@ -740,7 +740,7 @@ class GUI:
 
         widget = ContactWidget(
             username,
-            lambda: self.delete_contact(user_id),
+            lambda: self.hide_conversation(user_id),
             self.family
         )
 
@@ -1168,6 +1168,10 @@ class GUI:
 
         if user_id != self.current_contact:
 
+            self.show_hidden_conversation(
+                user_id
+            )
+
             self.unread_counts[user_id] = (
                 self.unread_counts.get(
                     user_id,
@@ -1188,6 +1192,55 @@ class GUI:
             False
         )
 
+
+    def show_hidden_conversation(self, user_id):
+
+        contact = self.contacts.get(user_id)
+
+        if not contact:
+            return
+
+        # Check if already visible
+        for i in range(
+            self.contacts_list.count()
+        ):
+
+            item = self.contacts_list.item(i)
+
+            if item.data(
+                Qt.ItemDataRole.UserRole
+            ) == user_id:
+                return
+
+        # Re-add the contact to the sidebar
+        item = QListWidgetItem()
+
+        item.setData(
+            Qt.ItemDataRole.UserRole,
+            user_id
+        )
+
+        widget = ContactWidget(
+            contact["username"],
+            lambda: self.hide_conversation(user_id),
+            self.family
+        )
+
+        self.contacts_list.addItem(
+            item
+        )
+
+        self.contacts_list.setItemWidget(
+            item,
+            widget
+        )
+
+        item.setSizeHint(
+            QSize(
+                0,
+                40
+            )
+        )
 
     def update_contact_item(self, user_id):
 
@@ -1252,7 +1305,7 @@ class GUI:
             widget = ContactWidget(
                 contact["username"],
                 lambda user_id=user_id:
-                    self.delete_contact(user_id),
+                    self.hide_conversation(user_id),
                 self.family
             )
 
@@ -1271,40 +1324,12 @@ class GUI:
                     40
                 )
             )
-    def delete_contact(self, user_id):
+    def hide_conversation(self, user_id):
 
-        contact = self.contacts.get(
-            user_id
-        )
-
-        if not contact:
+        if user_id not in self.contacts:
             return
 
-        self.database.delete_contact(
-            user_id
-        )
-
-        self.contacts.pop(
-            user_id,
-            None
-        )
-
-        self.unread_counts.pop(
-            user_id,
-            None
-        )
-
-        connection = self.network.connections.get(
-            user_id
-        )
-
-        if connection:
-
-            try:
-                connection.sock.close()
-            except OSError:
-                pass
-
+        # Hide the contact from the sidebar
         for i in range(
             self.contacts_list.count()
         ):
@@ -1315,17 +1340,11 @@ class GUI:
                 Qt.ItemDataRole.UserRole
             ) == user_id:
 
-                self.contacts_list.takeItem(
-                    i
-                )
-
+                self.contacts_list.takeItem(i)
                 break
 
-        self.remove_nearby_device(
-            contact["username"],
-            contact["ip"]
-        )
-
+        # If this conversation is currently open,
+        # close it
         if self.current_contact == user_id:
 
             self.current_contact = None

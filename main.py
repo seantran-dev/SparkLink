@@ -1,3 +1,5 @@
+# New-NetFirewallRule -DisplayName "SecureLink TCP 5000" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow -Profile Private
+# New-NetFirewallRule -DisplayName "SecureLink UDP 5001" -Direction Inbound -Protocol UDP -LocalPort 5001 -Action Allow -Profile Private
 import sys
 
 from PySide6.QtWidgets import QApplication
