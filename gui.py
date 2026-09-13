@@ -252,23 +252,23 @@ class FileBubble(QWidget):
 
         self.label.installEventFilter(self)
 
-        def eventFilter(self, obj, event):
-            if (
-                obj == self.label
-                and event.type() == QEvent.Type.MouseButtonPress
-                and event.button() == Qt.MouseButton.LeftButton
-            ):
-                self.open_file()
-                return True
+    def eventFilter(self, obj, event):
+        if (
+            obj == self.label
+            and event.type() == QEvent.Type.MouseButtonPress
+            and event.button() == Qt.MouseButton.LeftButton
+        ):
+            self.open_file()
+            return True
 
-            return super().eventFilter(obj, event)
+        return super().eventFilter(obj, event)
 
-        def open_file(self):
-            path = Path(self.file_path).resolve()
+    def open_file(self):
+        path = Path(self.file_path).resolve()
 
-            QDesktopServices.openUrl(
-                QUrl.fromLocalFile(str(path))
-            )
+        QDesktopServices.openUrl(
+            QUrl.fromLocalFile(str(path))
+        )
 
 
 class GUI:
