@@ -248,9 +248,9 @@ class FileBubble(QWidget):
             layout.addWidget(self.label)
             layout.addStretch()
 
-    self.setLayout(layout)
+        self.setLayout(layout)
 
-    self.label.installEventFilter(self)
+        self.label.installEventFilter(self)
 
     def eventFilter(self, obj, event):
         if (
