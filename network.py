@@ -1,5 +1,10 @@
 import socket
 import threading
+from pathlib import Path
+
+
+DOWNLOAD_DIR = Path("downloads")
+DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class Connection:
@@ -18,14 +23,22 @@ class Network:
 
         self.server = None
         self.gui = None
+
         self.user_id = user_id
         self.username = username
+
         self.connections = {}
+
         self.on_connection = None
         self.on_message = None
         self.on_typing = None
         self.on_stop_typing = None
         self.on_disconnect = None
+        self.on_file_received = None
+
+    # =========================================================
+    # SERVER
+    # =========================================================
 
     def start_server(self, host, port):
 
@@ -84,6 +97,10 @@ class Network:
             except OSError:
 
                 break
+
+    # =========================================================
+    # CONNECT
+    # =========================================================
 
     def connect(self, host, port, user_id):
 
@@ -160,9 +177,13 @@ class Network:
 
             sock.close()
 
+    # =========================================================
+    # RECEIVE
+    # =========================================================
+
     def receive(self, connection):
 
-        buffer = ""
+        buffer = b""
 
         while True:
 
@@ -175,23 +196,78 @@ class Network:
                 if not data:
                     break
 
-                buffer += data.decode(
-                    "utf-8"
-                )
+                buffer += data
 
-                while "\n" in buffer:
+                while True:
 
-                    message, buffer = buffer.split(
-                        "\n",
-                        1
+                    newline = buffer.find(
+                        b"\n"
                     )
 
-                    if not message:
+                    if newline == -1:
+                        break
+
+                    header = buffer[
+                        :newline
+                    ].decode(
+                        "utf-8"
+                    )
+
+                    buffer = buffer[
+                        newline + 1:
+                    ]
+
+                    if not header:
                         continue
+
+                    # -------------------------------------------------
+                    # File transfer
+                    # -------------------------------------------------
+
+                    if header.startswith(
+                        "FILE_START:"
+                    ):
+
+                        parts = header[11:].split(
+                            "|",
+                            1
+                        )
+
+                        if len(parts) != 2:
+                            continue
+
+                        filename = Path(
+                            parts[0]
+                        ).name
+
+                        try:
+                            file_size = int(
+                                parts[1]
+                            )
+                        except ValueError:
+                            continue
+
+                        success, buffer = (
+                            self.receive_file(
+                                connection,
+                                filename,
+                                file_size,
+                                buffer
+                            )
+                        )
+
+                        if not success:
+                            return
+
+                        continue
+
+                    # -------------------------------------------------
+                    # Normal message
+                    # -------------------------------------------------
 
                     self.handle_message(
                         connection,
-                        message
+                        header
                     )
 
             except (
@@ -223,7 +299,113 @@ class Network:
                 connection
             )
 
-    def handle_message(self, connection, message):
+    # =========================================================
+    # RECEIVE FILE
+    # =========================================================
+
+    def receive_file(
+        self,
+        connection,
+        filename,
+        file_size,
+        buffer
+    ):
+
+        file_path = DOWNLOAD_DIR / filename
+
+        # Prevent overwriting an existing file
+        counter = 1
+
+        while file_path.exists():
+
+            file_path = (
+                DOWNLOAD_DIR
+                / f"{Path(filename).stem}_{counter}"
+                f"{Path(filename).suffix}"
+            )
+
+            counter += 1
+
+        bytes_received = 0
+
+        try:
+
+            with open(
+                file_path,
+                "wb"
+            ) as file:
+
+                while bytes_received < file_size:
+
+                    if buffer:
+
+                        remaining = (
+                            file_size
+                            - bytes_received
+                        )
+
+                        chunk = buffer[
+                            :remaining
+                        ]
+
+                        buffer = buffer[
+                            len(chunk):
+                        ]
+
+                    else:
+
+                        chunk = connection.sock.recv(
+                            min(
+                                4096,
+                                file_size
+                                - bytes_received
+                            )
+                        )
+
+                        if not chunk:
+                            return False, buffer
+
+                    file.write(
+                        chunk
+                    )
+
+                    bytes_received += len(
+                        chunk
+                    )
+
+            print(
+                f"Received file: "
+                f"{file_path}"
+            )
+
+            if self.on_file_received:
+
+                self.on_file_received(
+                    connection,
+                    str(file_path),
+                    filename,
+                    file_size
+                )
+
+            return True, buffer
+
+        except OSError as e:
+
+            print(
+                f"File receive failed: {e}"
+            )
+
+            return False, buffer
+
+    # =========================================================
+    # HANDLE MESSAGE
+    # =========================================================
+
+    def handle_message(
+        self,
+        connection,
+        message
+    ):
 
         if message.startswith("CHAT:"):
 
@@ -276,8 +458,11 @@ class Network:
                 if existing is not connection:
 
                     try:
+
                         existing.sock.close()
+
                     except OSError:
+
                         pass
 
             self.connections[
@@ -285,7 +470,8 @@ class Network:
             ] = connection
 
             print(
-                f"Connected to {connection.username}"
+                f"Connected to "
+                f"{connection.username}"
             )
 
             if self.on_connection:
@@ -295,7 +481,15 @@ class Network:
                     connection.username
                 )
 
-    def send(self, user_id, message):
+    # =========================================================
+    # SEND MESSAGE
+    # =========================================================
+
+    def send(
+        self,
+        user_id,
+        message
+    ):
 
         connection = self.connections.get(
             user_id
@@ -316,7 +510,98 @@ class Network:
 
             return False
 
-    def send_typing(self, user_id):
+    # =========================================================
+    # SEND FILE
+    # =========================================================
+
+    def send_file(
+        self,
+        user_id,
+        file_path
+    ):
+
+        connection = self.connections.get(
+            user_id
+        )
+
+        if not connection:
+            return False
+
+        path = Path(
+            file_path
+        )
+
+        if not path.exists():
+            return False
+
+        if path.suffix.lower() not in (
+            ".jpg",
+            ".jpeg"
+        ):
+            print(
+                "Only JPG files are supported."
+            )
+
+            return False
+
+        try:
+
+            file_size = path.stat().st_size
+
+            filename = path.name
+
+            header = (
+                f"FILE_START:"
+                f"{filename}|"
+                f"{file_size}\n"
+            ).encode(
+                "utf-8"
+            )
+
+            connection.sock.sendall(
+                header
+            )
+
+            with open(
+                path,
+                "rb"
+            ) as file:
+
+                while True:
+
+                    chunk = file.read(
+                        4096
+                    )
+
+                    if not chunk:
+                        break
+
+                    connection.sock.sendall(
+                        chunk
+                    )
+
+            print(
+                f"Sent file: {filename}"
+            )
+
+            return True
+
+        except OSError as e:
+
+            print(
+                f"File send failed: {e}"
+            )
+
+            return False
+
+    # =========================================================
+    # TYPING
+    # =========================================================
+
+    def send_typing(
+        self,
+        user_id
+    ):
 
         connection = self.connections.get(
             user_id
@@ -334,7 +619,10 @@ class Network:
 
                 pass
 
-    def send_stop_typing(self, user_id):
+    def send_stop_typing(
+        self,
+        user_id
+    ):
 
         connection = self.connections.get(
             user_id
