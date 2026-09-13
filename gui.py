@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QSplitter,
     QSizePolicy,
     QDialog,
+    QFileDialog,
 )
 
 from PySide6.QtCore import (
@@ -678,21 +679,21 @@ class GUI:
             self.send_message
         )
 
-        self.message_box.setEnabled(
-            False
+        self.file_button = QPushButton(
+            "Image"
         )
 
-        self.send_button.setEnabled(
-            False
+        self.file_button.clicked.connect(
+            self.send_image
         )
 
-        bottom.addWidget(
-            self.message_box
-        )
+        self.message_box.setEnabled(False)
+        self.send_button.setEnabled(False)
+        self.file_button.setEnabled(False)
 
-        bottom.addWidget(
-            self.send_button
-        )
+        bottom.addWidget(self.message_box)
+        bottom.addWidget(self.send_button)
+        bottom.addWidget(self.file_button)
 
         chat_layout.addLayout(
             bottom
@@ -999,26 +1000,18 @@ class GUI:
 
         if connection:
 
-            self.message_box.setEnabled(
-                True
-            )
-
-            self.send_button.setEnabled(
-                True
-            )
+            self.message_box.setEnabled(True)
+            self.send_button.setEnabled(True)
+            self.file_button.setEnabled(True)
 
             self.typing_label.hide()
 
         else:
 
-            self.message_box.setEnabled(
-                False
-            )
-
-            self.send_button.setEnabled(
-                False
-            )
-
+            self.message_box.setEnabled(False)
+            self.send_button.setEnabled(False)
+            self.file_button.setEnabled(False)
+            
             self.typing_label.setText(
                 "Offline"
             )
@@ -1214,13 +1207,9 @@ class GUI:
 
         if user_id == self.current_contact:
 
-            self.message_box.setEnabled(
-                True
-            )
-
-            self.send_button.setEnabled(
-                True
-            )
+            self.message_box.setEnabled(True)
+            self.send_button.setEnabled(True)
+            self.file_button.setEnabled(True)
 
             self.hide_typing()
 
@@ -1270,13 +1259,9 @@ class GUI:
         if connection.user_id != self.current_contact:
             return
 
-        self.message_box.setEnabled(
-            False
-        )
-
-        self.send_button.setEnabled(
-            False
-        )
+        self.message_box.setEnabled(False)
+        self.send_button.setEnabled(False)
+        self.file_button.setEnabled(False)
 
         self.typing_label.setText(
             "Disconnected"
@@ -1321,6 +1306,29 @@ class GUI:
         if self.is_typing:
 
             self.stop_typing()
+
+    def send_image(self):
+        if not self.current_contact:
+            return
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self.window,
+            "Select Image",
+            "",
+            "JPEG Images (*.jpg *.jpeg)"
+        )
+
+        if not file_path:
+            return
+
+        success = self.network.send_file(
+            self.current_contact,
+            file_path
+        )
+
+        if success:
+            print(f"Image sent: {file_path}")
+
 
     # =========================================================
     # DISPLAY MY MESSAGE
@@ -1520,6 +1528,7 @@ class GUI:
                     40
                 )
             )
+
     def hide_conversation(self, user_id):
 
         if user_id not in self.contacts:
@@ -1551,13 +1560,9 @@ class GUI:
                 "Select a contact"
             )
 
-            self.message_box.setEnabled(
-                False
-            )
-
-            self.send_button.setEnabled(
-                False
-            )
+            self.message_box.setEnabled(False)
+            self.send_button.setEnabled(False)
+            self.file_button.setEnabled(False)
 
             self.hide_typing()
 
