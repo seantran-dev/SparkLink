@@ -19,6 +19,7 @@ from PySide6.QtCore import (
     Signal,
     QTimer,
     QSize,
+    QUrl,
 )
 
 from PySide6.QtGui import (
