@@ -1792,6 +1792,8 @@ class GUI:
         self.chat.scrollToBottom()
 
     def add_file_bubble(self, filename, file_path, mine):
+        file_path = str(Path(file_path).resolve())
+
         bubble = FileBubble(
             filename,
             file_path,
