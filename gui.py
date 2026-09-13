@@ -20,6 +20,7 @@ from PySide6.QtCore import (
     QTimer,
     QSize,
     QUrl,
+    QEvent,
 )
 
 from PySide6.QtGui import (
@@ -249,14 +250,27 @@ class FileBubble(QWidget):
 
         self.setLayout(layout)
 
-        self.label.mousePressEvent = self.open_file
+        self.label.installEventFilter(self)
 
-    def open_file(self, event):
-        path = Path(self.file_path).resolve()
+        def eventFilter(self, obj, event):
+            if (
+                obj == self.label
+                and event.type() == QEvent.Type.MouseButtonPress
+                and event.button() == Qt.MouseButton.LeftButton
+            ):
+                self.open_file()
+                return True
 
-        QDesktopServices.openUrl(
-            QUrl.fromLocalFile(str(path))
-        )
+            return super().eventFilter(obj, event)
+
+        def open_file(self):
+            path = Path(self.file_path).resolve()
+
+            QDesktopServices.openUrl(
+                QUrl.fromLocalFile(str(path))
+            )
+
+And your imports need:
 
 class GUI:
 
