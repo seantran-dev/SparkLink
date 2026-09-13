@@ -24,10 +24,11 @@ from PySide6.QtCore import (
 from PySide6.QtGui import (
     QFont,
     QFontDatabase,
+    QDesktopServices,
 )
 
 from message_bubble import MessageBubble
-
+from pathlib import Path
 
 class Signals(QObject):
 
@@ -40,6 +41,8 @@ class Signals(QObject):
 
     device_found = Signal(str, str, str, int)
     device_lost = Signal(str, str)
+
+    file_received = Signal(object, str, str, int)
 
 
 class ChatList(QListWidget):
@@ -164,6 +167,37 @@ class ContactWidget(QWidget):
             layout
         )
 
+class FileBubble(QPushButton):
+    def __init__(self, filename, file_path, mine, parent=None):
+        super().__init__(f"📎  {filename}", parent)
+
+        self.file_path = file_path
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFont(QFont(parent.family, 16) if parent else QFont("", 16))
+
+        self.setStyleSheet("""
+            QPushButton {
+                background-color: #1A1A1A;
+                color: #FFD24A;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 14px;
+                text-align: left;
+            }
+
+            QPushButton:hover {
+                background-color: #242424;
+            }
+        """)
+
+        self.clicked.connect(self.open_file)
+
+    def open_file(self):
+        path = Path(self.file_path).resolve()
+        QDesktopServices.openUrl(
+            QUrl.fromLocalFile(str(path))
+        )
+
 class GUI:
 
     def __init__(self):
@@ -236,6 +270,10 @@ class GUI:
 
         self.signals.device_lost.connect(
             self.remove_nearby_device
+        )
+
+        self.signals.file_received.connect(
+            self.display_friend_file
         )
 
         # =====================================================
@@ -1327,7 +1365,8 @@ class GUI:
         )
 
         if success:
-            print(f"Image sent: {file_path}")
+            filename = Path(file_path).name
+            self.display_my_file(filename, file_path)
 
 
     # =========================================================
@@ -1396,6 +1435,47 @@ class GUI:
             False
         )
 
+    def display_friend_file(self, connection, file_path, filename, file_size):
+        user_id = connection.user_id
+
+        if user_id != self.current_contact:
+            self.show_hidden_conversation(user_id)
+
+        if user_id != self.current_contact:
+            self.unread_counts[user_id] = (
+                self.unread_counts.get(user_id, 0) + 1
+            )
+            self.update_contact_item(user_id)
+            return
+
+        bubble = FileBubble(
+            filename,
+            file_path,
+            False,
+            self
+        )
+
+        item = QListWidgetItem()
+        self.chat.addItem(item)
+        self.chat.setItemWidget(item, bubble)
+        item.setSizeHint(bubble.sizeHint())
+
+        self.chat.scrollToBottom()
+
+    def display_my_file(self, filename, file_path):
+        bubble = FileBubble(
+            filename,
+            file_path,
+            True,
+            self
+        )
+
+        item = QListWidgetItem()
+        self.chat.addItem(item)
+        self.chat.setItemWidget(item, bubble)
+        item.setSizeHint(bubble.sizeHint())
+
+        self.chat.scrollToBottom()
 
     def show_hidden_conversation(self, user_id):
 

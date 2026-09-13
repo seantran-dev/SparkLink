@@ -115,6 +115,16 @@ def start_main_gui(username, user_id):
             )
     )
 
+    network.on_file_received = (
+        lambda connection, file_path, filename, file_size:
+            gui.signals.file_received.emit(
+                connection,
+                file_path,
+                filename,
+                file_size
+            )
+    )
+
     network.start_server(
         "0.0.0.0",
         5000
