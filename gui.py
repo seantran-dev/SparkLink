@@ -181,12 +181,14 @@ class FileBubble(QWidget):
         family = QFontDatabase.applicationFontFamilies(font_id)[0]
 
         self.label = QLabel(f"<u>{filename}</u>")
+
         self.label.setFont(
             QFont(
                 family,
                 18
             )
         )
+
         self.label.setCursor(
             Qt.CursorShape.PointingHandCursor
         )
@@ -194,7 +196,7 @@ class FileBubble(QWidget):
         text_width = (
             self.label
             .fontMetrics()
-            .horizontalAdvance(f"{filename}")
+            .horizontalAdvance(filename)
         )
 
         bubble_width = min(
@@ -250,21 +252,20 @@ class FileBubble(QWidget):
 
         self.setLayout(layout)
 
-        self.label.installEventFilter(self)
-
-    def eventFilter(self, obj, event):
-        if (
-            obj == self.label
-            and event.type() == QEvent.Type.MouseButtonPress
-            and event.button() == Qt.MouseButton.LeftButton
-        ):
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
             self.open_file()
-            return True
 
-        return super().eventFilter(obj, event)
+        super().mousePressEvent(event)
 
     def open_file(self):
         path = Path(self.file_path).resolve()
+
+        print(f"Opening file: {path}")
+
+        if not path.exists():
+            print("File does not exist!")
+            return
 
         QDesktopServices.openUrl(
             QUrl.fromLocalFile(str(path))
@@ -1451,7 +1452,8 @@ class GUI:
                 conversation_id=self.current_contact,
                 sender_id=self.user_id,
                 message_ciphertext=filename,
-                message_nonce=file_path
+                message_nonce=file_path,
+                message_type="file"
             )
 
             self.add_file_bubble(
