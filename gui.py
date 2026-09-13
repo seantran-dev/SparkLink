@@ -1123,7 +1123,6 @@ class GUI:
     # =========================================================
 
     def load_conversation(self, user_id):
-
         self.chat.clear()
 
         messages = self.database.get_conversation(
@@ -1131,11 +1130,19 @@ class GUI:
         )
 
         for message in messages:
+            mine = message["sender_id"] == self.user_id
 
-            self.add_message_bubble(
-                message["message_ciphertext"],
-                message["sender_id"] == self.user_id
-            )
+            if message["message_type"] == "file":
+                self.add_file_bubble(
+                    message["message_ciphertext"],
+                    message["message_nonce"],
+                    mine
+                )
+            else:
+                self.add_message_bubble(
+                    message["message_ciphertext"],
+                    mine
+                )
 
         self.chat.scrollToBottom()
 
@@ -1426,7 +1433,19 @@ class GUI:
 
         if success:
             filename = Path(file_path).name
-            self.display_my_file(filename, file_path)
+
+            self.database.save_message(
+                conversation_id=self.current_contact,
+                sender_id=self.user_id,
+                message_ciphertext=filename,
+                message_nonce=file_path
+            )
+
+            self.add_file_bubble(
+                filename,
+                file_path,
+                True
+            )
 
 
     # =========================================================
@@ -1495,31 +1514,49 @@ class GUI:
             False
         )
 
-    def display_friend_file(self, connection, file_path, filename, file_size):
+    def display_friend_file(
+        self,
+        connection,
+        file_path,
+        filename,
+        file_size
+    ):
         user_id = connection.user_id
+
+        if not user_id:
+            return
+
+        self.database.save_message(
+            conversation_id=user_id,
+            sender_id=user_id,
+            message_ciphertext=filename,
+            message_nonce=file_path,
+            message_type="file"
+        )
 
         if user_id != self.current_contact:
             self.show_hidden_conversation(user_id)
 
-        if user_id != self.current_contact:
             self.unread_counts[user_id] = (
-                self.unread_counts.get(user_id, 0) + 1
+                self.unread_counts.get(
+                    user_id,
+                    0
+                ) + 1
             )
-            self.update_contact_item(user_id)
+
+            self.update_contact_item(
+                user_id
+            )
+
             return
 
-        bubble = FileBubble(
+        self.hide_typing()
+
+        self.add_file_bubble(
             filename,
             file_path,
-            False,
+            False
         )
-
-        item = QListWidgetItem()
-        self.chat.addItem(item)
-        self.chat.setItemWidget(item, bubble)
-        item.setSizeHint(bubble.sizeHint())
-
-        self.chat.scrollToBottom()
 
     def display_my_file(self, filename, file_path):
         bubble = FileBubble(
@@ -1754,6 +1791,31 @@ class GUI:
 
         self.chat.scrollToBottom()
 
+    def add_file_bubble(self, filename, file_path, mine):
+        bubble = FileBubble(
+            filename,
+            file_path,
+            mine
+        )
+
+        item = QListWidgetItem()
+
+        self.chat.addItem(item)
+
+        self.chat.setItemWidget(
+            item,
+            bubble
+        )
+
+        bubble.setFixedWidth(
+            self.chat.viewport().width()
+        )
+
+        item.setSizeHint(
+            bubble.sizeHint()
+        )
+
+        self.chat.scrollToBottom()
     # =========================================================
     # TYPING
     # =========================================================

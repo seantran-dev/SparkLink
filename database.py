@@ -68,11 +68,20 @@ class Database:
                 message_id TEXT UNIQUE NOT NULL,
                 conversation_id TEXT NOT NULL,
                 sender_id TEXT NOT NULL,
+                message_type TEXT NOT NULL DEFAULT 'text',
                 message_ciphertext TEXT NOT NULL,
                 message_nonce TEXT,
                 timestamp INTEGER NOT NULL
             )
         """)
+
+        try:
+            cursor.execute("""
+                ALTER TABLE messages
+                ADD COLUMN message_type TEXT NOT NULL DEFAULT 'text'
+            """)
+        except sqlite3.OperationalError:
+            pass
 
         self.connection.commit()
 
@@ -244,7 +253,8 @@ class Database:
         message_ciphertext,
         message_nonce=None,
         message_id=None,
-        timestamp=None
+        timestamp=None,
+        message_type="text"
     ):
 
         if message_id is None:
@@ -266,15 +276,17 @@ class Database:
                 message_id,
                 conversation_id,
                 sender_id,
+                message_type,
                 message_ciphertext,
                 message_nonce,
                 timestamp
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             message_id,
             conversation_id,
             sender_id,
+            message_type,
             message_ciphertext,
             message_nonce,
             timestamp
@@ -297,6 +309,7 @@ class Database:
                 message_id,
                 conversation_id,
                 sender_id,
+                message_type,
                 message_ciphertext,
                 message_nonce,
                 timestamp
