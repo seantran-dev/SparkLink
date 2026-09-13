@@ -1452,7 +1452,7 @@ class GUI:
             filename,
             file_path,
             False,
-            self
+            self.window
         )
 
         item = QListWidgetItem()
@@ -1467,7 +1467,7 @@ class GUI:
             filename,
             file_path,
             True,
-            self
+            self.window
         )
 
         item = QListWidgetItem()
