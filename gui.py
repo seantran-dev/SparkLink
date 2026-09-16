@@ -959,9 +959,10 @@ class GUI:
             }
 
             QMessageBox QLabel {
+            background-color: #1A1A1A;
                 color: #FFFFFF;
                 font-family: "Blender Pro";
-                font-size: 14px;
+                font-size: 16px;
             }
 
             QMessageBox QPushButton {
