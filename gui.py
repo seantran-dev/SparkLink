@@ -939,33 +939,80 @@ class GUI:
 
     def show_connection_request(self, connection, username):
         dialog = QMessageBox(self.window)
-
-        dialog.setWindowTitle("Connection Request")
-        dialog.setText(
-            f"{username} wants to connect with you."
-        )
-        dialog.setInformativeText(
-            "Allow this connection?"
-        )
+        dialog.setWindowTitle("SecureLink")
+        dialog.setText(f"{username} wants to connect with you.")
+        dialog.setInformativeText("Allow this connection?")
 
         allow_button = dialog.addButton(
             "Allow",
             QMessageBox.AcceptRole
         )
-
         deny_button = dialog.addButton(
             "Deny",
             QMessageBox.RejectRole
         )
+
+        dialog.setStyleSheet("""
+            QMessageBox {
+                background-color: #1A1A1A;
+                border: 1px solid #303030;
+            }
+
+            QMessageBox QLabel {
+                color: #FFFFFF;
+                font-family: "Blender Pro";
+                font-size: 14px;
+            }
+
+            QMessageBox QPushButton {
+                background-color: #252525;
+                color: #FFFFFF;
+                border: 1px solid #303030;
+                border-radius: 4px;
+                padding: 7px 20px;
+                font-family: "Blender Pro";
+                font-size: 13px;
+                min-width: 70px;
+            }
+
+            QMessageBox QPushButton:hover {
+                background-color: #303030;
+                border: 1px solid #00FF66;
+            }
+
+            QMessageBox QPushButton:pressed {
+                background-color: #111111;
+            }
+        """)
+
+        allow_button.setStyleSheet("""
+            QPushButton {
+                background-color: #00FF66;
+                color: #111111;
+                border: none;
+                border-radius: 4px;
+                padding: 7px 20px;
+                font-family: "Blender Pro";
+                font-size: 13px;
+                font-weight: bold;
+                min-width: 70px;
+            }
+
+            QPushButton:hover {
+                background-color: #33FF88;
+            }
+
+            QPushButton:pressed {
+                background-color: #00CC55;
+            }
+        """)
 
         dialog.exec()
 
         if dialog.clickedButton() == allow_button:
             print(f"Connection request accepted: {username}")
 
-            self.network.add_contact(
-                connection.user_id
-            )
+            self.network.add_contact(connection.user_id)
 
             self.add_contact(
                 connection.user_id,
