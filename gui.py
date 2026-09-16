@@ -151,6 +151,7 @@ class ContactWidget(QWidget):
                 background: transparent;
                 color: #FF5555;
             }
+            
         """)
 
         self.delete_button.clicked.connect(
@@ -473,6 +474,12 @@ class GUI:
             border: 2px solid #E6BD3F;
         }
 
+        QPushButton:disabled {
+            background-color: #2B2B2B;
+            border: 2px solid #303030;
+            color: #777777;
+        }
+
         QSplitter::handle {
             background-color: #222222;
         }
@@ -791,9 +798,8 @@ class GUI:
             self.send_message
         )
 
-        self.file_button = QPushButton(
-            "Image"
-        )
+        self.file_button = QPushButton("+")
+
 
         self.file_button.clicked.connect(
             self.send_image
@@ -806,6 +812,7 @@ class GUI:
         bottom.addWidget(self.message_box)
         bottom.addWidget(self.send_button)
         bottom.addWidget(self.file_button)
+        
 
         chat_layout.addLayout(
             bottom
@@ -1437,9 +1444,9 @@ class GUI:
 
         file_path, _ = QFileDialog.getOpenFileName(
             self.window,
-            "Select Image",
+            "Select File",
             "",
-            "JPEG Images (*.jpg *.jpeg)"
+            "Images and PDFs (*.jpg *.jpeg *.pdf)"
         )
 
         if not file_path:

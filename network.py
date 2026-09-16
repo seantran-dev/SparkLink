@@ -219,7 +219,7 @@ class Network:
             return False
 
         path = Path(file_path)
-        if not path.exists() or path.suffix.lower() not in (".jpg", ".jpeg"):
+        if not path.exists() or path.suffix.lower() not in (".jpg", ".jpeg", ".pdf"):
             return False
 
         try:
