@@ -1505,6 +1505,17 @@ class GUI:
 
     def handle_remote_remove(self, user_id):
         self.network.remove_contact(user_id)
+        self.database.delete_contact(user_id)
+
+        self.contacts.pop(user_id, None)
+        self.unread_counts.pop(user_id, None)
+
+        for i in range(self.contacts_list.count()):
+            item = self.contacts_list.item(i)
+
+            if item.data(Qt.ItemDataRole.UserRole) == user_id:
+                self.contacts_list.takeItem(i)
+                break
 
         if self.current_contact == user_id:
             self.current_contact = None
