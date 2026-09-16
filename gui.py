@@ -1847,7 +1847,7 @@ class GUI:
             self.chat.clear()
 
             self.chat_title.setText(
-                "Select a contact"
+                "No contact selected"
             )
 
             self.message_box.setEnabled(False)
