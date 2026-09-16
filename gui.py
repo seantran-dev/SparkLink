@@ -931,153 +931,235 @@ class GUI:
         )
 
     def show_contact_selector(self):
-
-        dialog = QDialog(
-            self.window
-        )
-
-        dialog.setWindowTitle(
-            "Select Contact"
-        )
-
-        dialog.setFixedSize(
-            300,
-            400
-        )
+        dialog = QDialog(self.window)
+        dialog.setWindowTitle("Select Contact")
+        dialog.setFixedSize(380, 450)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setSpacing(10)
 
-        label = QLabel(
-            "SELECT CONTACT"
-        )
+        label = QLabel("SELECT CONTACT")
+        label.setFont(QFont(self.family, 12, QFont.Weight.Bold))
 
-        label.setFont(
-            QFont(
-                self.family,
-                12,
-                QFont.Weight.Bold
-            )
-        )
+        layout.addWidget(label)
 
         contacts_list = QListWidget()
-
         contacts_list.setStyleSheet("""
             QListWidget {
                 background-color: #111111;
                 border: none;
                 outline: none;
-                padding: 10px;
-                color: #F4F4F4;
             }
-
             QListWidget::item {
-                color: #F4F4F4;
-                padding: 8px;
+                background-color: transparent;
+                border: none;
             }
-
-            QListWidget::item:hover {
-                background-color: #1A1A1A;
-            }
-
             QListWidget::item:selected {
-                background-color: #222222;
+                background-color: transparent;
             }
         """)
+        layout.addWidget(contacts_list)
 
         contacts = self.database.get_contacts()
 
         for contact in contacts:
-
             user_id = contact["user_id"]
 
-            # Don't show contacts already visible
+            # Only show contacts that are currently hidden
             visible = False
-
-            for i in range(
-                self.contacts_list.count()
-            ):
-
+            for i in range(self.contacts_list.count()):
                 item = self.contacts_list.item(i)
-
-                if item.data(
-                    Qt.ItemDataRole.UserRole
-                ) == user_id:
-
+                if item.data(Qt.ItemDataRole.UserRole) == user_id:
                     visible = True
                     break
 
             if visible:
                 continue
 
-            item = QListWidgetItem(
-                contact["username"]
-            )
+            username = contact["username"]
+            ip = contact["ip"]
+            port = contact["port"]
 
-            item.setFont(
-                QFont(
-                    self.family,
-                    16
+            # Main row widget
+            row = QWidget()
+            row_layout = QVBoxLayout()
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.setSpacing(0)
+            row.setLayout(row_layout)
+
+            # Clickable contact name
+            header = QPushButton(username)
+            header.setCheckable(True)
+            header.setCursor(Qt.CursorShape.PointingHandCursor)
+            header.setFont(QFont(self.family, 20))
+            header.setStyleSheet("""
+                QPushButton {
+                    background-color: #111111;
+                    border: none;
+                    border-bottom: 1px solid #111111;
+                    border-radius: 0px;
+                    padding: 10px;
+                    color: #F4F4F4;
+                    text-align: left;
+                }
+                QPushButton:hover {
+                    background-color: #1A1A1A;
+                }
+                QPushButton:checked {
+                    background-color: #1A1A1A;
+                }
+            """)
+            row_layout.addWidget(header)
+
+            # Expandable information section
+            details = QWidget()
+            details_layout = QVBoxLayout()
+            details_layout.setContentsMargins(15, 10, 15, 10)
+            details_layout.setSpacing(8)
+            details.setLayout(details_layout)
+            details.hide()
+
+            # Connection status
+            if user_id in self.network.connections:
+                status = "Connected"
+            else:
+                status = "Offline"
+
+            info = QLabel(
+                f"User ID: {user_id}\n"
+                f"Address: {ip}:{port}\n"
+                f"Status: {status}"
+            )
+            info.setFont(QFont(self.family, 11))
+            info.setStyleSheet("""
+                QLabel {
+                    color: #8E8E8E;
+                    background: transparent;
+                    border: none;
+                }
+            """)
+            info.setTextInteractionFlags(
+                Qt.TextInteractionFlag.TextSelectableByMouse
+            )
+            details_layout.addWidget(info)
+
+            # Buttons
+            buttons_layout = QHBoxLayout()
+            buttons_layout.setSpacing(8)
+
+            restore_button = QPushButton("Restore")
+            restore_button.setCursor(Qt.CursorShape.PointingHandCursor)
+
+            delete_button = QPushButton("Delete")
+            delete_button.setCursor(Qt.CursorShape.PointingHandCursor)
+
+            restore_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #FFE680;
+                    border: 1px solid #FFE680;
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    color: #0B0B0B;
+                }
+                QPushButton:hover {
+                    background-color: #FFD24A;
+                }
+            """)
+
+            delete_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #222222;
+                    border: 1px solid #444444;
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    color: #FF6666;
+                }
+                QPushButton:hover {
+                    background-color: #333333;
+                    border: 1px solid #FF6666;
+                }
+            """)
+
+            buttons_layout.addWidget(restore_button)
+            buttons_layout.addWidget(delete_button)
+            buttons_layout.addStretch()
+
+            details_layout.addLayout(buttons_layout)
+            row_layout.addWidget(details)
+
+            # Add the custom widget to the list
+            item = QListWidgetItem()
+            item.setData(Qt.ItemDataRole.UserRole, user_id)
+
+            contacts_list.addItem(item)
+            contacts_list.setItemWidget(item, row)
+
+            item.setSizeHint(row.sizeHint())
+
+            # Expand/collapse contact information
+            def toggle_details(
+                checked,
+                details=details,
+                row=row,
+                item=item
+            ):
+                details.setVisible(checked)
+                item.setSizeHint(row.sizeHint())
+                contacts_list.doItemsLayout()
+
+            header.toggled.connect(toggle_details)
+
+            # Restore contact
+            def restore_contact(
+                checked=False,
+                contact=contact
+            ):
+                self.add_contact(
+                    contact["user_id"],
+                    contact["username"],
+                    contact["ip"],
+                    contact["port"]
                 )
-            )
+                dialog.accept()
 
+            restore_button.clicked.connect(restore_contact)
 
-            item.setData(
-                Qt.ItemDataRole.UserRole,
-                user_id
-            )
+            # Delete contact permanently
+            def delete_contact(
+                checked=False,
+                user_id=user_id,
+                item=item,
+                row=row
+            ):
+                # Remove from database
+                self.database.delete_contact(user_id)
 
-            contacts_list.addItem(
-                item
-            )
+                # Remove from in-memory contacts
+                self.contacts.pop(user_id, None)
 
-        layout.addWidget(
-            label
-        )
+                # Close active connection if one exists
+                connection = self.network.connections.pop(user_id, None)
+                if connection:
+                    try:
+                        connection.sock.close()
+                    except OSError:
+                        pass
 
-        layout.addWidget(
-            contacts_list
-        )
+                # Remove from selector
+                row_index = contacts_list.row(item)
+                if row_index >= 0:
+                    contacts_list.takeItem(row_index)
 
-        dialog.setLayout(
-            layout
-        )
+                row.deleteLater()
 
-        def restore_contact(item):
+                # Close dialog if there are no hidden contacts left
+                if contacts_list.count() == 0:
+                    dialog.accept()
 
-            user_id = item.data(
-                Qt.ItemDataRole.UserRole
-            )
+            delete_button.clicked.connect(delete_contact)
 
-            contact = self.contacts.get(
-                user_id
-            )
-
-            if not contact:
-                contact = self.database.get_contact(
-                    user_id
-                )
-
-            if not contact:
-                return
-
-            self.database.set_contact_hidden(
-                user_id,
-                False
-            )
-
-            self.add_contact(
-                contact["user_id"],
-                contact["username"],
-                contact["ip"],
-                contact["port"]
-            )
-
-            dialog.accept()
-
-        contacts_list.itemClicked.connect(
-            restore_contact
-        )
-
+        dialog.setLayout(layout)
         dialog.exec()
 
 
