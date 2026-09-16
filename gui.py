@@ -1519,7 +1519,7 @@ class GUI:
 
         if self.current_contact == user_id:
             self.current_contact = None
-            self.chat_title.setText("")
+            self.chat_title.setText("No contact selected")
             self.chat.clear()
             self.message_box.clear()
             self.message_box.setEnabled(False)
