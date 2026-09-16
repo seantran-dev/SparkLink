@@ -333,7 +333,7 @@ class GUI:
         self.signals.stop_typing_received.connect(
             self.hide_typing
         )
-        
+
         self.signals.connection_accepted.connect(
             self.handle_connection_accepted
         )
@@ -1194,6 +1194,7 @@ class GUI:
 
                 self.database.delete_contact(user_id)
                 self.network.remove_contact(user_id)
+                self.network.disconnect(user_id)
 
                 print("DATABASE DELETE COMPLETE")
 
