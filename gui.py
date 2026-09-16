@@ -1209,6 +1209,14 @@ class GUI:
                     if contact_item.data(Qt.ItemDataRole.UserRole) == user_id:
                         self.contacts_list.takeItem(i)
                         break
+                if self.current_contact == user_id:
+                    self.current_contact = None
+                    self.chat_title.setText("")
+                    self.message_box.clear()
+                    self.message_box.setEnabled(False)
+                    self.send_button.setEnabled(False)
+                    self.file_button.setEnabled(False)
+                    self.typing_label.hide()
 
                 print("Deleted from MESSAGES")
 
