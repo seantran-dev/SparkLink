@@ -101,6 +101,7 @@ class Discovery:
                     "last_seen": time.time()
                 }
 
+
                 if self.on_device_found and self.scanning:
 
                     self.on_device_found(

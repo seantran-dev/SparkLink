@@ -21,6 +21,7 @@ class Network:
         self.user_id = user_id
         self.username = username
         self.connections = {}
+        self.authorized_contacts = set()
         self.on_connection = None
         self.on_message = None
         self.on_typing = None
@@ -74,6 +75,31 @@ class Network:
         except OSError as e:
             print(f"Connection failed: {e}")
             sock.close()
+
+
+    def disconnect(self, user_id):
+        connection = self.connections.pop(user_id, None)
+
+        if not connection:
+            return
+
+        print(f"Disconnecting from {connection.username}")
+
+        try:
+            connection.sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+
+        try:
+            connection.sock.close()
+        except OSError:
+            pass
+
+    def add_contact(self, user_id):
+        self.authorized_contacts.add(user_id)
+
+    def remove_contact(self, user_id):
+        self.authorized_contacts.discard(user_id)
 
     # Receive
     def receive(self, connection):
@@ -168,14 +194,27 @@ class Network:
     # Handle messages
     def handle_message(self, connection, message):
         if message.startswith("CHAT:"):
+            if connection.user_id not in self.authorized_contacts:
+                print(
+                    f"Ignoring message from unauthorized user: "
+                    f"{connection.user_id}"
+                )
+                return
+
             if self.on_message:
                 self.on_message(connection, message[5:])
 
         elif message == "TYPING":
+            if connection.user_id not in self.authorized_contacts:
+                return
+
             if self.on_typing:
                 self.on_typing(connection)
 
         elif message == "STOP_TYPING":
+            if connection.user_id not in self.authorized_contacts:
+                return
+
             if self.on_stop_typing:
                 self.on_stop_typing(connection)
 

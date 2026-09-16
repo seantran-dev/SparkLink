@@ -298,6 +298,7 @@ class GUI:
         # }
         self.contacts = {}
         self.unread_counts = {}
+        self.pending_contacts = set()
 
         # In-memory conversations for now.
         #
@@ -425,19 +426,19 @@ class GUI:
 
         QListWidget::item {
             border: none;
-            padding: 0px;
-            color: transparent;
+            padding-left: 4px;
+            color: #F4F4F4;
         }
 
 
         QListWidget::item:hover {
             background-color: #1A1A1A;
-            color: transparent;
+            color: #F4F4F4;
         }
 
         QListWidget::item:selected {
             background-color: #222222;
-            color: transparent;
+            color: #F4F4F4;
         }
 
         QLineEdit {
@@ -1130,32 +1131,35 @@ class GUI:
                 checked=False,
                 user_id=user_id,
                 item=item,
-                row=row
+                row=row,
+                contact=contact
             ):
-                # Remove from database
+                print(f"Deleting contact: {contact['username']}")
+                print(f"User ID: {user_id}")
+
                 self.database.delete_contact(user_id)
+                self.network.remove_contact(user_id)
 
-                # Remove from in-memory contacts
+                print("DATABASE DELETE COMPLETE")
+
                 self.contacts.pop(user_id, None)
+                self.unread_counts.pop(user_id, None)
 
-                # Close active connection if one exists
-                connection = self.network.connections.pop(user_id, None)
-                if connection:
-                    try:
-                        connection.sock.close()
-                    except OSError:
-                        pass
+                for i in range(self.contacts_list.count()):
+                    contact_item = self.contacts_list.item(i)
 
-                # Remove from selector
+                    if contact_item.data(Qt.ItemDataRole.UserRole) == user_id:
+                        self.contacts_list.takeItem(i)
+                        break
+
+                print("Deleted from MESSAGES")
+
                 row_index = contacts_list.row(item)
+
                 if row_index >= 0:
                     contacts_list.takeItem(row_index)
 
-                row.deleteLater()
-
-                # Close dialog if there are no hidden contacts left
-                if contacts_list.count() == 0:
-                    dialog.accept()
+                print("Deleted from selector")
 
             delete_button.clicked.connect(delete_contact)
 
@@ -1266,6 +1270,7 @@ class GUI:
         port
     ):
 
+
         if user_id == self.user_id:
             return
 
@@ -1306,7 +1311,7 @@ class GUI:
 
                     return
 
-        item = QListWidgetItem()
+        item = QListWidgetItem(username)
 
         item.setData(
             Qt.ItemDataRole.UserRole,
@@ -1318,9 +1323,7 @@ class GUI:
             }
         )
 
-        self.nearby_list.addItem(
-            item
-        )
+        self.nearby_list.addItem(item)
 
     # =========================================================
     # REMOVE NEARBY DEVICE
@@ -1357,7 +1360,6 @@ class GUI:
     # =========================================================
 
     def select_nearby(self, item):
-
         device = item.data(
             Qt.ItemDataRole.UserRole
         )
@@ -1376,23 +1378,28 @@ class GUI:
             f"({ip}:{port})"
         )
 
+        # Explicitly selecting a nearby user means
+        # we are choosing to add them as a contact.
+        self.pending_contacts.add(user_id)
+        self.network.add_contact(user_id)
+
+        self.add_contact(
+            user_id,
+            username,
+            ip,
+            port
+        )
+        self.nearby_list.takeItem(
+            self.nearby_list.row(item)
+        )
+
         self.current_contact = user_id
+        self.chat_title.setText(username)
+        self.load_conversation(user_id)
 
-        self.chat_title.setText(
-            username
-        )
-
-        self.load_conversation(
-            user_id
-        )
-
-        self.message_box.setEnabled(
-            False
-        )
-
-        self.send_button.setEnabled(
-            False
-        )
+        self.message_box.setEnabled(False)
+        self.send_button.setEnabled(False)
+        self.file_button.setEnabled(False)
 
         if self.network:
             self.network.connect(
@@ -1406,30 +1413,21 @@ class GUI:
     # =========================================================
 
     def handle_connection(self, connection, username):
-
         ip, port = connection.address
-
         user_id = connection.user_id
 
-        self.add_contact(
-            user_id,
-            username,
-            ip,
-            port
-        )
+        if user_id in self.pending_contacts:
+            self.pending_contacts.remove(user_id)
 
         if user_id == self.current_contact:
-
             self.message_box.setEnabled(True)
             self.send_button.setEnabled(True)
             self.file_button.setEnabled(True)
-
             self.hide_typing()
+            
+        self.update_contact_item(user_id)
 
-        for i in range(
-            self.nearby_list.count()
-        ):
-
+        for i in range(self.nearby_list.count()):
             item = self.nearby_list.item(i)
 
             device = item.data(
@@ -1437,11 +1435,7 @@ class GUI:
             )
 
             if device and device["user_id"] == user_id:
-
-                self.nearby_list.takeItem(
-                    i
-                )
-
+                self.nearby_list.takeItem(i)
                 break
 
     def handle_discovered_contact(
@@ -1731,43 +1725,31 @@ class GUI:
         )
 
     def update_contact_item(self, user_id):
+        count = self.unread_counts.get(user_id, 0)
 
-        count = self.unread_counts.get(
-            user_id,
-            0
-        )
-
-        for i in range(
-            self.contacts_list.count()
-        ):
-
+        for i in range(self.contacts_list.count()):
             item = self.contacts_list.item(i)
 
-            if item.data(
-                Qt.ItemDataRole.UserRole
-            ) != user_id:
+            if item.data(Qt.ItemDataRole.UserRole) != user_id:
                 continue
 
-            contact = self.contacts.get(
-                user_id
-            )
+            contact = self.contacts.get(user_id)
 
             if not contact:
                 return
 
             username = contact["username"]
+            widget = self.contacts_list.itemWidget(item)
+
+            if not widget:
+                return
 
             if count > 0:
-
-                item.setText(
+                widget.name_label.setText(
                     f"{username}  ({count})"
                 )
-
             else:
-
-                item.setText(
-                    username
-                )
+                widget.name_label.setText(username)
 
             return
 
