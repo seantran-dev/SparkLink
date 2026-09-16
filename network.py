@@ -12,6 +12,7 @@ class Connection:
         self.user_id = user_id
         self.username = username
         self.address = sock.getpeername()
+        self.outgoing = False
 
 
 class Network:
@@ -28,6 +29,7 @@ class Network:
         self.on_stop_typing = None
         self.on_disconnect = None
         self.on_file_received = None
+        self.on_connection_accepted = None
 
     # Server
     def start_server(self, host, port):
@@ -63,6 +65,7 @@ class Network:
             sock.connect((host, port))
             sock.settimeout(None)
             connection = Connection(sock)
+            connection.outgoing = True
             sock.sendall(f"IDENTITY:{self.user_id}|{self.username}\n".encode())
             print(f"Connected to {host}:{port}")
             threading.Thread(target=self.receive, args=(connection,), daemon=True).start()
@@ -210,16 +213,13 @@ class Network:
         if message == "ACCEPT":
             self.authorized_contacts.add(connection.user_id)
 
-            if self.on_connection:
-                self.on_connection(connection, connection.username)
+            if self.gui:
+                self.gui.signals.connection_accepted.emit(connection)
 
             return
 
-        elif message == "DENY":
-            print(
-                f"Connection request denied by "
-                f"{connection.username}"
-            )
+        if message == "DENY":
+            print(f"Connection request denied by {connection.username}")
             self.disconnect(connection.user_id)
             return
 

@@ -40,6 +40,7 @@ class Signals(QObject):
     stop_typing_received = Signal(object)
 
     connection_received = Signal(object, str)
+    connection_accepted = Signal(object)
     connection_lost = Signal(object)
 
     device_found = Signal(str, str, str, int)
@@ -332,7 +333,10 @@ class GUI:
         self.signals.stop_typing_received.connect(
             self.hide_typing
         )
-
+        
+        self.signals.connection_accepted.connect(
+            self.handle_connection_accepted
+        )
         self.signals.connection_received.connect(
             self.handle_connection
         )
@@ -1429,16 +1433,8 @@ class GUI:
             f"({ip}:{port})"
         )
 
-        # Explicitly selecting a nearby user means
-        # we are choosing to add them as a contact.
         self.pending_contacts.add(user_id)
 
-        self.add_contact(
-            user_id,
-            username,
-            ip,
-            port
-        )
         self.nearby_list.takeItem(
             self.nearby_list.row(item)
         )
@@ -1460,30 +1456,32 @@ class GUI:
         ip, port = connection.address
         user_id = connection.user_id
 
-        # If we initiated this connection and the other
-        # person accepted, authorize and add them.
-        if user_id in self.pending_contacts:
-            self.pending_contacts.remove(user_id)
-
-            self.network.add_contact(user_id)
-
-            self.add_contact(
-                user_id,
-                username,
-                ip,
-                port
-            )
-
-            print(f"Connection accepted by {username}")
-
+        # We initiated this connection.
+        # Wait for the other user to accept.
+        if connection.outgoing:
             return
 
-        # Otherwise, this is an incoming connection request.
+        # They initiated the connection.
+        # Ask whether we want to allow it.
         self.show_connection_request(
             connection,
             username
         )
 
+    def handle_connection_accepted(self, connection):
+        user_id = connection.user_id
+        username = connection.username
+        ip, port = connection.address
+
+        self.add_contact(
+            user_id,
+            username,
+            ip,
+            port
+        )
+
+        print(f"Connection accepted by {username}")
+        
     def handle_discovered_contact(
         self,
         user_id,
