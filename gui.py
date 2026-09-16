@@ -931,6 +931,56 @@ class GUI:
             )
         )
 
+    def show_connection_request(self, connection, username):
+        dialog = QMessageBox(self.window)
+
+        dialog.setWindowTitle("Connection Request")
+        dialog.setText(
+            f"{username} wants to connect with you."
+        )
+        dialog.setInformativeText(
+            "Allow this connection?"
+        )
+
+        allow_button = dialog.addButton(
+            "Allow",
+            QMessageBox.AcceptRole
+        )
+
+        deny_button = dialog.addButton(
+            "Deny",
+            QMessageBox.RejectRole
+        )
+
+        dialog.exec()
+
+        if dialog.clickedButton() == allow_button:
+            print(f"Connection request accepted: {username}")
+
+            self.network.add_contact(
+                connection.user_id
+            )
+
+            self.add_contact(
+                connection.user_id,
+                username,
+                connection.address[0],
+                connection.address[1]
+            )
+
+            self.network.send_connection_response(
+                connection.user_id,
+                True
+            )
+
+        else:
+            print(f"Connection request denied: {username}")
+
+            self.network.send_connection_response(
+                connection.user_id,
+                False
+            )
+            
     def show_contact_selector(self):
         dialog = QDialog(self.window)
         dialog.setWindowTitle("Select Contact")
@@ -1381,7 +1431,6 @@ class GUI:
         # Explicitly selecting a nearby user means
         # we are choosing to add them as a contact.
         self.pending_contacts.add(user_id)
-        self.network.add_contact(user_id)
 
         self.add_contact(
             user_id,
@@ -1393,13 +1442,7 @@ class GUI:
             self.nearby_list.row(item)
         )
 
-        self.current_contact = user_id
-        self.chat_title.setText(username)
-        self.load_conversation(user_id)
 
-        self.message_box.setEnabled(False)
-        self.send_button.setEnabled(False)
-        self.file_button.setEnabled(False)
 
         if self.network:
             self.network.connect(
@@ -1416,27 +1459,29 @@ class GUI:
         ip, port = connection.address
         user_id = connection.user_id
 
+        # If we initiated this connection and the other
+        # person accepted, authorize and add them.
         if user_id in self.pending_contacts:
             self.pending_contacts.remove(user_id)
 
-        if user_id == self.current_contact:
-            self.message_box.setEnabled(True)
-            self.send_button.setEnabled(True)
-            self.file_button.setEnabled(True)
-            self.hide_typing()
-            
-        self.update_contact_item(user_id)
+            self.network.add_contact(user_id)
 
-        for i in range(self.nearby_list.count()):
-            item = self.nearby_list.item(i)
-
-            device = item.data(
-                Qt.ItemDataRole.UserRole
+            self.add_contact(
+                user_id,
+                username,
+                ip,
+                port
             )
 
-            if device and device["user_id"] == user_id:
-                self.nearby_list.takeItem(i)
-                break
+            print(f"Connection accepted by {username}")
+
+            return
+
+        # Otherwise, this is an incoming connection request.
+        self.show_connection_request(
+            connection,
+            username
+        )
 
     def handle_discovered_contact(
         self,

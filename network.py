@@ -95,6 +95,20 @@ class Network:
         except OSError:
             pass
 
+    def send_connection_response(self, user_id, accepted):
+        connection = self.connections.get(user_id)
+
+        if not connection:
+            return
+
+        try:
+            if accepted:
+                connection.sock.sendall(b"ACCEPT\n")
+            else:
+                connection.sock.sendall(b"DENY\n")
+        except OSError:
+            pass
+
     def add_contact(self, user_id):
         self.authorized_contacts.add(user_id)
 
@@ -193,6 +207,22 @@ class Network:
 
     # Handle messages
     def handle_message(self, connection, message):
+        if message == "ACCEPT":
+            self.authorized_contacts.add(connection.user_id)
+
+            if self.on_connection:
+                self.on_connection(connection, connection.username)
+
+            return
+
+        elif message == "DENY":
+            print(
+                f"Connection request denied by "
+                f"{connection.username}"
+            )
+            self.disconnect(connection.user_id)
+            return
+
         if message.startswith("CHAT:"):
             if connection.user_id not in self.authorized_contacts:
                 print(
