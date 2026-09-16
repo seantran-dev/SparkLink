@@ -211,10 +211,15 @@ class Network:
     # Handle messages
     def handle_message(self, connection, message):
         if message == "ACCEPT":
+            print(f"ACCEPT received from {connection.username}")
+
             self.authorized_contacts.add(connection.user_id)
 
             if self.gui:
+                print("Emitting connection_accepted signal")
                 self.gui.signals.connection_accepted.emit(connection)
+            else:
+                print("ERROR: self.gui is None")
 
             return
 

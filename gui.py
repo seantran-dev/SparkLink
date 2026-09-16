@@ -284,6 +284,7 @@ class GUI:
         # =====================================================
 
         self.network = None
+
         self.discovery = None
         self.database = None
         self.user_id = None
@@ -1454,20 +1455,29 @@ class GUI:
     # =========================================================
 
     def handle_connection(self, connection, username):
-        ip, port = connection.address
         user_id = connection.user_id
 
-        # We initiated this connection.
-        # Wait for the other user to accept.
-        if connection.outgoing:
+        # Already authorized contact reconnecting.
+        if user_id in self.network.authorized_contacts:
+            print(f"Existing authorized contact connected: {username}")
+
+            if user_id == self.current_contact:
+                self.message_box.setEnabled(True)
+                self.send_button.setEnabled(True)
+                self.file_button.setEnabled(True)
+                self.hide_typing()
+
             return
 
-        # They initiated the connection.
-        # Ask whether we want to allow it.
-        self.show_connection_request(
-            connection,
-            username
-        )
+        # We initiated this connection.
+        # Wait for the other person to accept.
+        if connection.outgoing:
+            print(f"Outgoing connection to {username}, waiting for acceptance.")
+            return
+
+        # New incoming connection request.
+        print(f"New connection request from {username}")
+        self.show_connection_request(connection, username)
 
     def handle_connection_accepted(self, connection):
         user_id = connection.user_id

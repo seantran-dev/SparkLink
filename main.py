@@ -36,6 +36,7 @@ def start_main_gui(username, user_id):
         user_id,
         username
     )
+    network.gui = gui
 
     discovery = Discovery(
         user_id,
