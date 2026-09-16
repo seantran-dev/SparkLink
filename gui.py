@@ -1929,7 +1929,7 @@ class GUI:
         for contact in contacts:
 
             user_id = contact["user_id"]
-
+            self.network.add_contact(user_id)
             self.contacts[user_id] = contact
 
             item = QListWidgetItem()
