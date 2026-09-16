@@ -1504,7 +1504,6 @@ class GUI:
     
 
     def handle_remote_remove(self, user_id):
-        print(f"REMOTE REMOVE: {user_id}, current={self.current_contact}")
         self.network.remove_contact(user_id)
         self.database.delete_contact(user_id)
 
@@ -1526,6 +1525,15 @@ class GUI:
             self.send_button.setEnabled(False)
             self.file_button.setEnabled(False)
             self.typing_label.hide()
+
+            # Reset the chat area
+            while self.chat_layout.count():
+                item = self.chat_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+
+            self.chat.scrollToBottom()
             
     def handle_discovered_contact(
         self,
