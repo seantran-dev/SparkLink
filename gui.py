@@ -940,13 +940,46 @@ class GUI:
     def show_connection_request(self, connection, username):
         dialog = QMessageBox(self.window)
         dialog.setWindowTitle("SecureLink")
-        dialog.setText(f"{username} wants to connect with you.")
-        dialog.setInformativeText("Allow this connection?")
+
+        dialog.setText(
+            f"""
+            <div style="text-align: center;">
+                <span style="
+                    font-size: 14px;
+                    color: #FFFFFF;
+                ">
+                    Connection request from:
+                </span>
+                <br><br>
+                <span style="
+                    font-size: 22px;
+                    font-weight: bold;
+                    color: #00FF66;
+                ">
+                    {username}
+                </span>
+            </div>
+            """
+        )
+
+        dialog.setInformativeText(
+            """
+            <div style="text-align: center;">
+                <span style="
+                    font-size: 13px;
+                    color: #8E8E8E;
+                ">
+                    Allow this connection?
+                </span>
+            </div>
+            """
+        )
 
         allow_button = dialog.addButton(
             "Allow",
             QMessageBox.AcceptRole
         )
+
         deny_button = dialog.addButton(
             "Deny",
             QMessageBox.RejectRole
@@ -959,10 +992,9 @@ class GUI:
             }
 
             QMessageBox QLabel {
-            background-color: #1A1A1A;
+                background-color: #1A1A1A;
                 color: #FFFFFF;
                 font-family: "Blender Pro";
-                font-size: 16px;
             }
 
             QMessageBox QPushButton {
