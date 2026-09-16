@@ -227,7 +227,10 @@ class Network:
             self.authorized_contacts.discard(connection.user_id)
 
             if self.gui:
+                print(f"Calling handle_remote_remove for {connection.user_id}")
                 self.gui.handle_remote_remove(connection.user_id)
+            else:
+                print("ERROR: GUI is None")
 
             self.disconnect(connection.user_id)
             return

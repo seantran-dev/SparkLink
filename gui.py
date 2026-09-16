@@ -1504,6 +1504,7 @@ class GUI:
     
 
     def handle_remote_remove(self, user_id):
+        print(f"REMOTE REMOVE: {user_id}, current={self.current_contact}")
         self.network.remove_contact(user_id)
         self.database.delete_contact(user_id)
 
