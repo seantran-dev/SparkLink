@@ -103,16 +103,23 @@ class Network:
 
         if not connection:
             return
-        try:
-            connection.sock.sendall(b"REMOVE\n")
-        except OSError:
-            pass
 
         try:
             if accepted:
                 connection.sock.sendall(b"ACCEPT\n")
             else:
                 connection.sock.sendall(b"DENY\n")
+        except OSError:
+            pass
+
+    def send_remove(self, user_id):
+        connection = self.connections.get(user_id)
+
+        if not connection:
+            return
+
+        try:
+            connection.sock.sendall(b"REMOVE\n")
         except OSError:
             pass
 
