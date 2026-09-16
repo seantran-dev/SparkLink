@@ -103,6 +103,10 @@ class Network:
 
         if not connection:
             return
+        try:
+            connection.sock.sendall(b"REMOVE\n")
+        except OSError:
+            pass
 
         try:
             if accepted:
@@ -210,6 +214,17 @@ class Network:
 
     # Handle messages
     def handle_message(self, connection, message):
+        if message == "REMOVE":
+            print(f"Contact removed by {connection.username}")
+
+            self.authorized_contacts.discard(connection.user_id)
+
+            if self.gui:
+                self.gui.handle_remote_remove(connection.user_id)
+
+            self.disconnect(connection.user_id)
+            return
+
         if message == "ACCEPT":
             print(f"ACCEPT received from {connection.username}")
 
