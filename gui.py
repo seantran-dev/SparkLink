@@ -938,111 +938,122 @@ class GUI:
         )
 
     def show_connection_request(self, connection, username):
-        dialog = QMessageBox(self.window)
+        dialog = QDialog(self.window)
         dialog.setWindowTitle("SecureLink")
+        dialog.setFixedSize(460, 300)
 
-        dialog.setText(
-            f"""
-            <div style="text-align: center;">
-                <span style="
-                    font-size: 14px;
-                    color: #FFFFFF;
-                ">
-                    Connection request from:
-                </span>
-                <br><br>
-                <span style="
-                    font-size: 22px;
-                    font-weight: bold;
-                    color: #00FF66;
-                ">
-                    {username}
-                </span>
-            </div>
-            """
-        )
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(35, 5, 35, 25)
+        layout.setSpacing(0)
 
-        dialog.setInformativeText(
-            """
-            <div style="text-align: center;">
-                <span style="
-                    font-size: 13px;
-                    color: #8E8E8E;
-                ">
-                    Allow this connection?
-                </span>
-            </div>
-            """
-        )
-
-        allow_button = dialog.addButton(
-            "Allow",
-            QMessageBox.AcceptRole
-        )
-
-        deny_button = dialog.addButton(
-            "Deny",
-            QMessageBox.RejectRole
-        )
-
-        dialog.setStyleSheet("""
-            QMessageBox {
-                background-color: #1A1A1A;
-                border: 1px solid #303030;
-            }
-
-            QMessageBox QLabel {
+        # Title
+        request_label = QLabel("Connection request from:")
+        request_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        request_label.setStyleSheet("""
+            QLabel {
                 background-color: #1A1A1A;
                 color: #FFFFFF;
                 font-family: "Blender Pro";
+                font-size: 24px;
             }
+        """)
 
-            QMessageBox QPushButton {
+        # Username
+        username_label = QLabel(username)
+        username_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        username_label.setStyleSheet("""
+            QLabel {
+                background-color: #1A1A1A;
+                color: #FFD98A;
+                font-family: "Blender Pro";
+                font-size: 48px;
+                font-weight: bold;
+            }
+        """)
+
+        # Question
+        question_label = QLabel("Allow this connection?")
+        question_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        question_label.setStyleSheet("""
+            QLabel {
+                background-color: #1A1A1A;
+                color: #8E8E8E;
+                font-family: "Blender Pro";
+                font-size: 24px;
+            }
+        """)
+
+        layout.addStretch()
+        layout.addWidget(request_label)
+        layout.addSpacing(18)
+        layout.addWidget(username_label)
+        layout.addSpacing(18)
+        layout.addWidget(question_label)
+        layout.addStretch()
+
+        # Buttons
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(10)
+
+        allow_button = QPushButton("Confirm")
+        deny_button = QPushButton("Ignore")
+
+        allow_button.setFixedHeight(42)
+        deny_button.setFixedHeight(42)
+
+        allow_button.setStyleSheet("""
+            QPushButton {
+                background-color: #FFD98A;
+                color: #111111;
+                border: none;
+                border-radius: 8px;
+                font-family: "Blender Pro";
+                font-size: 20px;
+            }
+            QPushButton:hover {
+                background-color: #FFD24A;
+            }
+            QPushButton:pressed {
+                background-color: #E6A84F;
+            }
+        """)
+
+        deny_button.setStyleSheet("""
+            QPushButton {
                 background-color: #252525;
                 color: #FFFFFF;
                 border: 1px solid #303030;
-                border-radius: 4px;
-                padding: 7px 20px;
+                border-radius: 8px;
                 font-family: "Blender Pro";
-                font-size: 13px;
-                min-width: 70px;
+                font-size: 20px;
             }
-
-            QMessageBox QPushButton:hover {
+            QPushButton:hover {
                 background-color: #303030;
-                border: 1px solid #00FF66;
+                border: 1px solid #FFD24A;
             }
-
-            QMessageBox QPushButton:pressed {
+            QPushButton:pressed {
                 background-color: #111111;
             }
         """)
 
-        allow_button.setStyleSheet("""
-            QPushButton {
-                background-color: #00FF66;
-                color: #111111;
-                border: none;
-                border-radius: 4px;
-                padding: 7px 20px;
-                font-family: "Blender Pro";
-                font-size: 13px;
-                font-weight: bold;
-                min-width: 70px;
-            }
+        button_layout.addWidget(allow_button)
+        button_layout.addWidget(deny_button)
 
-            QPushButton:hover {
-                background-color: #33FF88;
-            }
+        layout.addLayout(button_layout)
 
-            QPushButton:pressed {
-                background-color: #00CC55;
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #1A1A1A;
+                border: 1px solid #303030;
             }
         """)
 
+        allow_button.clicked.connect(dialog.accept)
+        deny_button.clicked.connect(dialog.reject)
+
         dialog.exec()
 
-        if dialog.clickedButton() == allow_button:
+        if dialog.result() == QDialog.DialogCode.Accepted:
             print(f"Connection request accepted: {username}")
 
             self.network.add_contact(connection.user_id)
@@ -1061,7 +1072,6 @@ class GUI:
 
         else:
             print(f"Connection request denied: {username}")
-
             self.network.send_connection_response(
                 connection.user_id,
                 False
